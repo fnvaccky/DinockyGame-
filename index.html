@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#eef3df" />
+  <meta name="description" content="Meet Dinocky, your hungry little adventure buddy. Explore Snack Meadow, chomp some veggies, and find your next favorite look." />
+  <title>Dinocky · A little hungry. A lot of adventure.</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23F48B96'/%3E%3Cellipse cx='32' cy='42' rx='15' ry='17' fill='%23FFF5DE'/%3E%3Ccircle cx='24' cy='22' r='4' fill='%23392C32'/%3E%3Ccircle cx='42' cy='22' r='4' fill='%23392C32'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div id="app" data-screen="auth">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Dinocky home"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>dinocky<span class="brand-caption">a hungry little adventure</span></span></a>
+      <div class="account-bar">
+        <span id="profileName" class="profile-name" hidden></span>
+        <span id="wallet" class="wallet" hidden><span class="coin-icon" aria-hidden="true">D</span><span id="coinBalance">0</span><span class="sr-only">coins</span></span>
+        <button id="settingsOpen" class="icon-button" aria-label="Open settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 3-1 2 3 3-1 1-3 3-1 1-3-2-2 1-3-3-2-3 1-2-2Z"/><circle cx="11" cy="11" r="3"/></svg></button>
+      </div>
+    </header>
+    <main id="main">
+      <div id="worldLayout" class="world-layout">
+        <section class="scene-region" aria-label="Snack Meadow character preview">
+          <div class="scene-copy"><h1 id="sceneTitle">Little dino.<br />Big appetite.</h1><p id="sceneSubtitle">A whole world of delicious adventures awaits.</p></div>
+          <div id="sceneHost" class="scene-host"></div>
+          <span class="drag-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 8-3 4 3 4M19 8l3 4-3 4M3 12h18"/></svg> Drag to meet every side of Dinocky</span>
+        </section>
+
+        <section id="authPanel" class="panel auth-panel" aria-labelledby="authTitle">
+          <div class="panel-stamp" aria-hidden="true">hello, explorer!</div>
+          <h2 id="authTitle" tabindex="-1">Your adventure<br />starts here.</h2>
+          <p id="authDescription">Sign in and let’s find something tasty.</p>
+          <div id="authTabs" class="segmented" aria-label="Account options"><button id="loginTab" class="selected" aria-pressed="true">Log in</button><button id="signupTab" aria-pressed="false">Create account</button></div>
+          <form id="authForm">
+            <label id="nameField" hidden>Explorer name<input id="displayName" name="name" autocomplete="nickname" maxlength="24" placeholder="What should we call you?" /></label>
+            <label id="emailField">Email address<input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required /></label>
+            <label id="passwordField">Password<span class="password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Your secret snack code" required minlength="8" /><button id="togglePassword" type="button" aria-label="Show password">Show</button></span></label>
+            <button id="forgotPassword" class="text-button forgot" type="button">Forgot password?</button>
+            <p id="authMessage" class="form-message" role="status"></p>
+            <button id="authSubmit" class="button primary wide" type="submit">Let’s go <span aria-hidden="true">→</span></button>
+          </form>
+          <button id="backToLogin" class="text-button" hidden>Back to login</button>
+          <p class="form-footnote">Your progress, your coins, your little dino.<br />Saved for your next adventure.</p>
+        </section>
+
+        <section id="lobbyPanel" class="lobby-panel" hidden aria-label="Main menu">
+          <p class="welcome-line" id="welcomeLine">Welcome back, explorer.</p>
+          <div class="menu-buttons"><button id="levelsOpen" class="button secondary"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="17" r="2"/><circle cx="19" cy="7" r="2"/><path d="M7 17h4a4 4 0 0 0 0-8h2a4 4 0 0 1 4-2"/></svg> Levels</button><button id="startOpen" class="button primary start-button">Start adventure <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 14 9L7 21Z" fill="currentColor" stroke="none"/></svg></button><button id="shopOpen" class="button berry"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l2 13H3L5 8ZM8 9V6a4 4 0 0 1 8 0v3"/></svg> Shop</button></div>
+          <p class="menu-note">Hop. Chomp. Find your happy place.</p>
+        </section>
+
+        <section id="levelsPanel" class="panel levels-panel" hidden aria-labelledby="levelsTitle">
+          <button class="back-button" data-home>← Main menu</button><h2 id="levelsTitle" tabindex="-1">One small step.<br />One big snack.</h2><p>Pick a path. Bring your appetite.</p>
+          <div class="world-map">
+            <button id="playLevel" class="level-node available"><span class="level-number">1–1</span><span><strong>Snack Meadow</strong><small id="levelBest">Your first adventure starts here</small></span><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 14 9L7 21Z" fill="currentColor" stroke="none"/></svg></span></button>
+            <div class="map-path" aria-hidden="true"></div>
+            <div class="level-node locked"><span class="level-number">1–2</span><span><strong>Sugarberry Grove</strong><small>Coming soon</small></span><span aria-hidden="true">○</span></div>
+            <div class="map-path" aria-hidden="true"></div>
+            <div class="level-node locked"><span class="level-number">1–3</span><span><strong>Cookie Crumble Cove</strong><small>Coming soon</small></span><span aria-hidden="true">○</span></div>
+          </div>
+          <p class="reward-note"><span class="coin-icon" aria-hidden="true">D</span> 100 coins for your first clear. 25 each replay.</p>
+        </section>
+
+        <section id="shopPanel" class="panel shop-panel" hidden aria-labelledby="shopTitle">
+          <button class="back-button" data-home>← Main menu</button><h2 id="shopTitle" tabindex="-1">A fresh little look.</h2><p>Made for you. Paid for with adventures.</p>
+          <div id="shopItems" class="shop-items"></div>
+          <div class="item-detail"><strong id="itemName">Strawberry</strong><p id="itemDescription"></p><div class="shop-actions"><button id="buyItem" class="button primary">Buy</button><button id="equipItem" class="button secondary">Equip</button><button id="removeAccessory" class="text-button">Remove accessory</button></div></div>
+          <p id="shopMessage" class="form-message" role="status">Select a look to try it on.</p>
+        </section>
+
+        <section id="settingsPanel" class="panel settings-panel" hidden aria-labelledby="settingsTitle">
+          <button id="settingsBack" class="back-button">← Back</button><h2 id="settingsTitle" tabindex="-1">Make yourself<br />at home.</h2><p>A few things, just the way you like them.</p>
+          <label class="setting-row"><span><strong>Sound effects</strong><small>Little bleeps, big chomps</small></span><input id="soundEnabled" type="checkbox" checked role="switch" /></label>
+          <label class="setting-volume" for="volume"><span>Volume</span><output id="volumeLabel">70%</output><input id="volume" type="range" min="0" max="100" value="70" /></label>
+          <label class="setting-row"><span><strong>Reduced motion</strong><small>A quieter meadow, at your pace</small></span><input id="reducedMotion" type="checkbox" role="switch" /></label>
+          <p class="settings-help">Move with A / D or the arrow keys. Space to jump. X to chomp. Down + Jump to drop through shelves. Down in the air for Burger stomp. Touch controls appear on phones.</p>
+          <button id="signOut" class="button secondary wide">Sign out</button>
+        </section>
+
+        <section id="resultsPanel" class="panel results-panel" hidden aria-labelledby="resultsTitle">
+          <span class="result-flower" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="17" r="11"/><circle cx="47" cy="28" r="11"/><circle cx="41" cy="46" r="11"/><circle cx="22" cy="46" r="11"/><circle cx="16" cy="28" r="11"/><circle cx="32" cy="32" r="8" fill="#fffdf3"/></svg></span><h2 id="resultsTitle" tabindex="-1">Sweet success!</h2><p id="resultsSubtitle">That was one delicious adventure.</p>
+          <dl class="result-stats"><div><dt>Score</dt><dd id="resultScore">0</dd></div><div><dt>Best score</dt><dd id="resultBest">—</dd></div><div><dt>Coins earned</dt><dd id="resultCoins">Saving…</dd></div></dl>
+          <p id="saveStatus" role="status"></p><button id="retrySave" class="text-button" hidden>Retry save</button>
+          <button id="replayLevel" class="button primary wide">One more adventure <span aria-hidden="true">→</span></button><button class="button secondary wide" data-home>Main menu</button>
+        </section>
+      </div>
+
+      <section id="gamePanel" class="game-panel" hidden aria-label="World 1-1 gameplay">
+        <div class="game-hud"><strong>Snack Meadow <span>1–1</span></strong><span id="gameHearts" aria-label="3 hearts">♥♥♥</span><span>Time <b id="gameTime">240</b></span><span>Score <b id="gameScore">0</b></span><span id="gamePower">No power</span><button id="pauseGame" class="icon-button" aria-label="Pause game"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke-width="4"/></svg></button></div>
+        <div class="game-view"><canvas id="gameCanvas" width="960" height="540" tabindex="0" aria-label="World 1-1. Use arrows to move, Space to jump, X to chomp."></canvas>
+          <div id="pauseOverlay" class="pause-overlay" hidden><h2>Snack break?</h2><p>Your adventure can wait a little.</p><button id="resumeGame" class="button primary">Keep playing</button><button id="leaveGame" class="button secondary">Return to menu</button></div>
+        </div>
+        <div id="touchControls" class="touch-controls"><div><button data-control="left" aria-label="Move left">←</button><button data-control="down" aria-label="Down or stomp">↓</button><button data-control="right" aria-label="Move right">→</button></div><div><button data-control="chomp" class="touch-chomp">Chomp</button><button data-control="jump" class="touch-jump">Jump</button></div></div>
+        <p class="game-hint">Arrows / A D to move · Space to jump · X to chomp · Down + Jump to drop · P to pause</p>
+      </section>
+    </main>
+    <footer class="site-footer"><span>A little hungry. A lot of heart.</span><span id="connectionStatus">Made for little adventures</span></footer>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <div id="loading" class="loading-overlay" hidden><span class="loading-dot"></span><p id="loadingText">Packing your snacks…</p></div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-25T00:00:00Z",
+  "title": "Design System: Dinocky",
+  "extensions": {
+    "colorMeta": {
+      "green": { "role": "primary", "displayName": "Meadow Green" },
+      "berry": { "role": "primary", "displayName": "Berry" },
+      "cream": { "role": "neutral", "displayName": "Cream Panel" },
+      "dino-pink": { "role": "secondary", "displayName": "Dinocky Pink" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Fredoka Display", "purpose": "World introduction and playful identity." },
+      "body": { "displayName": "Nunito Sans Body", "purpose": "Task copy, fields, and supporting descriptions." }
+    },
+    "shadows": [
+      { "name": "panel", "value": "0 18px 55px #44583b12", "purpose": "Soft structural lift for cream panels." },
+      { "name": "primary-action", "value": "0 5px 12px #345c4218", "purpose": "Green action lift." },
+      { "name": "selected-tab", "value": "0 2px 6px #293a2410", "purpose": "Selected account tab." }
+    ],
+    "motion": [
+      { "name": "button-transition", "value": "background .15s, transform .15s", "purpose": "Enabled action feedback." },
+      { "name": "character-turn", "value": "20s", "purpose": "One automatic character revolution." },
+      { "name": "drag-resume", "value": "3s", "purpose": "Delay before automatic rotation resumes." },
+      { "name": "reduced-motion", "value": "automatic motion disabled", "purpose": "Retain manual interaction without ambient movement." }
+    ],
+    "breakpoints": [
+      { "name": "wide", "value": "1450px" },
+      { "name": "compact-desktop", "value": "900px" },
+      { "name": "mobile", "value": "650px" },
+      { "name": "short-landscape-height", "value": "520px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Forward action for starting play or submitting an account task.",
+      "html": "<button class=\"ds-primary\">Start adventure</button>",
+      "css": ".ds-primary{font:500 17px/1.2 Fredoka,sans-serif;background:var(--green,#397357);color:var(--cream,#fffdf3);border:1px solid transparent;border-radius:14px;padding:14px 22px;box-shadow:0 5px 12px #345c4218;cursor:pointer;transition:background .15s,transform .15s}.ds-primary:hover:not(:disabled){background:#2c6348;transform:translateY(-2px)}.ds-primary:focus-visible{outline:3px solid var(--berry,#a64160);outline-offset:5px}.ds-primary:disabled{opacity:.55;cursor:default}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Snack Meadow",
+    "overview": "A soft, sunny play world surrounds a warm, readable interface. Rounded procedural character geometry and slow ambient movement make Dinocky feel present. Cream panels and berry details carry the same friendly character into practical tasks.",
+    "keyCharacteristics": ["Rounded forms", "Generous scene space", "Soft structural shadows", "Compact readable controls", "Green forward actions"],
+    "rules": [{ "name": "The Forward Action Rule", "body": "Keep the main play or submission action green and the surrounding hierarchy quieter.", "section": "colors" }],
+    "dos": ["Do preserve Dinocky's default pink, cream, and gold identity.", "Do retain keyboard focus, reduced motion, and touch controls."],
+    "donts": ["Don't replace the procedural lobby with a flat decorative image.", "Don't imply unavailable levels or unowned cosmetics are available."]
+  }
+}

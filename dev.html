@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dinocky: The Hungry Dino Platformer</title>
+  <link rel="stylesheet" href="dev.css">
+</head>
+<body>
+  <div class="game-container">
+    <!-- Header -->
+    <header>
+      <div class="title-group">
+        <span class="title-icon">🦖</span>
+        <div>
+          <h1>DINOCKY: THE HUNGRY DINO</h1>
+          <div class="subtitle">Eat Favorite Foods, Gain Superpowers & Chomp Enemies!</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button id="tabBtnGame" class="tab-btn active" onclick="switchTab('game')">🎮 Play World 1-1</button>
+        <button id="tabBtnStudio" class="tab-btn" onclick="switchTab('studio')">🦖 Model & Animation Studio</button>
+      </div>
+    </header>
+
+    <!-- Top HUD Bar -->
+    <div class="hud-bar">
+      <div class="hud-stat">
+        <span id="hudLevel" class="hud-label">World 1-1</span>
+        <span id="hudHearts" class="hud-hearts" role="img" aria-label="3 of 3 hearts">♥♥♥</span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-label">Time:</span>
+        <span id="hudTimer" class="hud-value">240</span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-label">Score:</span>
+        <span id="hudScore" class="hud-value">0</span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-label">Enemies Eaten:</span>
+        <span id="hudEaten" class="hud-value">0</span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-label">Active Power:</span>
+        <span id="hudPower" class="power-badge none">None</span>
+        <span id="hudPowerTime" style="font-size:12px; color:#A5B4FC; font-weight:700;">--</span>
+      </div>
+      <div class="quick-powers">
+        <span class="hud-label" style="margin-right:4px;">Test Powers:</span>
+        <button class="quick-btn" onclick="giveGamePower('PIZZA')">🍕 Pizza</button>
+        <button class="quick-btn" onclick="giveGamePower('DONUT')">🍩 Donut</button>
+        <button class="quick-btn" onclick="giveGamePower('BURGER')">🍔 Burger</button>
+        <button class="quick-btn" onclick="resetGame()" style="margin-left:6px; background:#475569;">🔄 Reset</button>
+      </div>
+    </div>
+
+    <!-- Main Game Tab -->
+    <div id="gameTab" style="display: block;">
+      <div class="level-toolbar">
+        <label for="levelSelect">Stage</label>
+        <select id="levelSelect" onchange="changeLevel(this.value)">
+          <option value="world">World 1-1 · Snack Meadow</option>
+          <option value="arena">Test Arena</option>
+        </select>
+        <button id="pauseButton" class="quick-btn" onclick="togglePause()">Pause (P)</button>
+        <button id="soundButton" class="quick-btn" aria-pressed="true" onclick="toggleSound()">Sound: On</button>
+      </div>
+      <div class="canvas-wrapper">
+        <canvas id="gameCanvas" width="960" height="540" aria-label="Dinocky platform game. Keyboard controls below."></canvas>
+      </div>
+      <p id="hudStatus" class="level-status" role="status">Move or jump to begin.</p>
+    </div>
+
+    <!-- Model Studio Tab -->
+    <div id="studioTab" style="display: none;">
+      <div class="studio-container">
+        <div class="studio-viewport">
+          <canvas id="studioCanvas" width="640" height="540"></canvas>
+        </div>
+        <div class="studio-sidebar">
+          <div class="sidebar-section">
+            <h3>🎭 Animations & Expressions</h3>
+            <div class="button-grid">
+              <button class="studio-ctrl-btn active" data-action="idle" onclick="setStudioAction('idle')">Idle (Breathe)</button>
+              <button class="studio-ctrl-btn" data-action="run" onclick="setStudioAction('run')">Waddle / Run</button>
+              <button class="studio-ctrl-btn" data-action="jump" onclick="setStudioAction('jump')">Jump Airborne</button>
+              <button class="studio-ctrl-btn" data-action="fall" onclick="setStudioAction('fall')">Falling Pose</button>
+              <button class="studio-ctrl-btn" data-action="chomp" onclick="setStudioAction('chomp')">😮 Giant Chomp</button>
+              <button class="studio-ctrl-btn" data-action="chew" onclick="setStudioAction('chew')">😋 Chew & Crumbs</button>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <h3>⚡ Food Superpower Auras</h3>
+            <div class="button-grid">
+              <button class="studio-ctrl-btn active" data-power="NONE" onclick="setStudioPower('NONE')">Normal Form</button>
+              <button class="studio-ctrl-btn" data-power="PIZZA" onclick="setStudioPower('PIZZA')">🍕 Pizza Fire</button>
+              <button class="studio-ctrl-btn" data-power="DONUT" onclick="setStudioPower('DONUT')">🍩 Sugar Phase</button>
+              <button class="studio-ctrl-btn" data-power="BURGER" onclick="setStudioPower('BURGER')">🍔 Heavy Stomp</button>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <h3>🔄 Model Perspective</h3>
+            <button class="studio-ctrl-btn" style="width: 100%;" onclick="toggleStudioFacing()">Flip Facing Direction</button>
+          </div>
+
+          <div class="reference-card">
+            <strong>Plush & Drawing Design Specs:</strong>
+            <ul>
+              <li>Soft strawberry pink plush torso (#F48B96)</li>
+              <li>Golden yellow dorsal ridges (#FBBF24)</li>
+              <li>Cream belly patch (#FFFDF5)</li>
+              <li>Rosy spiral cheeks (#FB7185)</li>
+              <li>Scalloped cartoon teeth & wide jaw</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Footer -->
+    <footer>
+      <div class="key-guide">
+        <span><strong>Move:</strong> <kbd>A</kbd> <kbd>D</kbd> or <kbd>←</kbd> <kbd>→</kbd></span>
+        <span><strong>Jump:</strong> <kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd></span>
+        <span><strong>Drop Through Platform:</strong> <kbd>Down</kbd> + <kbd>Jump</kbd></span>
+        <span><strong>Chomp / Eat Enemy:</strong> <kbd>X</kbd> or <kbd>E</kbd></span>
+        <span><strong>Burger Stomp:</strong> <kbd>Down</kbd> in the air</span>
+        <span><strong>Pause / Restart:</strong> <kbd>P</kbd> / <kbd>R</kbd></span>
+        <span><strong class="highlight">Donut Phase-Jump:</strong> Eat 🍩 to jump straight through purple barrier walls!</span>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="src/dev.js"></script>
+</body>
+</html>
