@@ -4,6 +4,8 @@ A Three.js meadow lobby and Supabase accounts around the original JavaScript/Can
 
 ## Run locally
 
+Live site: https://dinocky-game.vercel.app — deployed on Vercel's Hobby plan. The `fnvaccky/DinockyGame-` GitHub repository is connected for automatic deployments from `main`. Vercel stores the two public `VITE_SUPABASE_*` settings; local environment files are not committed.
+
 ```sh
 npm install
 npm start
@@ -11,9 +13,11 @@ npm start
 
 Open the URL printed by Vite (normally http://127.0.0.1:3000; the current development session uses port 3001 because 3000 was occupied). On PowerShell with script execution disabled, use `npm.cmd`. `npm run build` produces `dist`; `npm run preview` serves that production build. The old `serve.js` is not the bundled app server.
 
-Copy `.env.example` to `.env.local` when setting up another checkout. Use only the project URL and **publishable** key in Vite variables; never a secret/service-role key. The current ignored `.env.local` is connected to dedicated project **Dinocky**, ref `izudarafpjgosbuiycms`, Singapore, in **fnvaccky's**, created at the approved $0/month quote. No public hosting was provisioned.
+Copy `.env.example` to `.env.local` when setting up another checkout. Use only the project URL and **publishable** key in Vite variables; never a secret/service-role key. The current ignored `.env.local` is connected to dedicated project **Dinocky**, ref `izudarafpjgosbuiycms`, Singapore, in **fnvaccky's**, created at the approved $0/month quote.
 
 ## Email setup still required
+
+Production redirect setup is still pending: set the Supabase Site URL to `https://dinocky-game.vercel.app` and allow `https://dinocky-game.vercel.app/` and `https://dinocky-game.vercel.app/?recovery=1`. The deployment smoke check verified public HTTP 200, WebGL rendering, enabled login, and no page errors; it did not verify email delivery.
 
 The user has no email provider ready. Public signup confirmation and password recovery must be verified after configuring a verified SMTP sender in Supabase Authentication → Email → SMTP settings. Keep email confirmation enabled. Supabase's default sender is restricted; the app does not bypass confirmation or provide guest accounts.
 

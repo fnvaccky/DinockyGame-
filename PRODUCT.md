@@ -9,7 +9,7 @@ Dinocky is a friendly, food-themed browser platformer. Players meet their little
 - Level 1–1 is the existing Canvas platformer with keyboard and simultaneous touch controls. Future levels must remain visibly unavailable until implemented.
 - Cosmetic purchases use earned coins. Preview, purchase, ownership, and equipped state must be distinguishable.
 - Auth includes sign in, account creation, and password recovery. SMTP provider configuration remains an operational dependency; do not describe delivery as verified until it is tested.
-- No public deployment is authorized by this product brief.
+- The user authorized GitHub publication and Vercel deployment; the production site is https://dinocky-game.vercel.app.
 
 ## Identity
 
