@@ -60,6 +60,7 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(base); await page.locator('#loading').waitFor({ state: 'hidden' });
   await page.waitForFunction(() => document.querySelector('#sceneHost').dataset.renderer === 'webgl');
+  await page.waitForFunction(() => document.querySelector('#sceneHost').dataset.model === 'plush');
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: '.impeccable/review/auth-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });

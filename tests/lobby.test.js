@@ -5,6 +5,36 @@ import { RewardQueue } from '../src/services/RewardQueue.js';
 import { Dinocky3D } from '../src/lobby/Dinocky3D.js';
 import { DinockyModel } from '../src/character/DinockyModel.js';
 import { GameSession } from '../src/game/GameSession.js';
+import { readFile } from 'node:fs/promises';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+async function loadPlush() {
+  const data = await readFile(new URL('../public/models/dinocky-plush.glb', import.meta.url));
+  return new GLTFLoader().parseAsync(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength), '');
+}
+
+test('approved GLB replaces fallback, retains pending cosmetics and blinks in place', async () => {
+  const model = new Dinocky3D(); model.setCosmetics({ color: 'mint', accessory: 'cap' });
+  assert.equal(await model.load({ loadAsync: loadPlush }), true);
+  assert.equal(model.skin.color.getHexString(), '8fcda8');
+  assert.equal(model.rig.children.length, 3); assert.equal(model.eyes.length, 2);
+  const positions = model.eyes.map(eye => eye.position.clone());
+  model.animate(4.1, false);
+  model.eyes.forEach((eye, i) => { assert.equal(eye.scale.y, .09); assert.ok(eye.position.equals(positions[i])); });
+  model.animate(4.1, true); model.eyes.forEach(eye => assert.equal(eye.scale.y, 1));
+  model.setCosmetics({ color: 'pink', accessory: 'scarf' });
+  assert.ok(model.skin.color.equals(model.originalPink)); assert.ok(model.scarf.visible && !model.cap.visible);
+  assert.equal(model.getObjectByName('Dinocky_Smile_Game'), undefined);
+});
+
+test('failed and late GLB loads leave a safe lifecycle', async () => {
+  const failed = new Dinocky3D();
+  assert.equal(await failed.load({ loadAsync: async () => { throw new Error('offline'); } }), false);
+  assert.ok(failed.rig.children.length > 3);
+  const late = new Dinocky3D(); late.dispose();
+  assert.equal(await late.load({ loadAsync: loadPlush }), false);
+  assert.equal(late.asset, undefined);
+});
 
 test('touch holds combine, release independently, and clear on disabling', () => {
   const input = new Input(null);

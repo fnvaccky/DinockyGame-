@@ -22,6 +22,11 @@ export class MeadowScene {
       Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6 }); sun.shadow.bias = -0.001;
       this.scene.add(sun);
       this.model = new Dinocky3D(); this.model.position.y = 0.15; this.scene.add(this.model);
+      this.model.load().then(loaded => {
+        if (this.abort.signal.aborted || !this.renderer) return;
+        this.host.dataset.model = loaded ? 'plush' : 'procedural-fallback';
+        this.draw();
+      });
       this.buildMeadow();
       this.canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.showFallback(); }, { signal: this.abort.signal });
     } catch { this.showFallback(); }
@@ -144,6 +149,7 @@ export class MeadowScene {
   stop() { this.running = false; cancelAnimationFrame(this.raf); }
   dispose() {
     this.stop(); this.abort.abort(); this.observer.disconnect();
+    this.model?.dispose();
     const geometries = new Set(), materials = new Set();
     this.scene.traverse(object => { if (object.geometry) geometries.add(object.geometry); if (object.material) materials.add(object.material); });
     geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose());

@@ -1,0 +1,10 @@
+{
+  "triangles": 27098,
+  "vertices": 14316,
+  "meshes": 11,
+  "symmetry_error": 5.960464477539063e-08,
+  "glb_bytes": 607416,
+  "rigged": false,
+  "front": "glTF +Z",
+  "up": "glTF +Y"
+}
