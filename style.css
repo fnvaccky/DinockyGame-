@@ -39,15 +39,15 @@ input::placeholder{color:#626d59}
 #app.immersive[data-screen=game] .game-view{flex:1;min-height:0;max-height:none;border-radius:0;background:#22301f;display:flex}
 #app.immersive[data-screen=game] .game-view canvas{width:100%;height:100%;max-width:none;max-height:none;margin:0;object-fit:contain}
 #app.immersive.touch[data-screen=game] .game-panel{touch-action:none}
-#app.immersive.touch[data-screen=game] .touch-controls{position:absolute;z-index:3;inset:auto calc(env(safe-area-inset-right,0px) + 10px) calc(env(safe-area-inset-bottom,0px) + 12px) calc(env(safe-area-inset-left,0px) + 10px);margin:0;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none}
-#app.immersive.touch[data-screen=game] .touch-controls>div{pointer-events:auto;display:grid;gap:8px;max-width:none;flex-wrap:nowrap}
-#app.immersive.touch[data-screen=game] .touch-controls>div:first-child{grid-template-columns:repeat(2,54px)}
+#app.immersive.touch[data-screen=game] .touch-controls{position:absolute;z-index:3;inset:auto calc(env(safe-area-inset-right,0px) + 14px) calc(env(safe-area-inset-bottom,0px) + 16px) calc(env(safe-area-inset-left,0px) + 14px);margin:0;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none}
+#app.immersive.touch[data-screen=game] .touch-controls>div{pointer-events:auto;display:grid;gap:12px;max-width:none;flex-wrap:nowrap}
+#app.immersive.touch[data-screen=game] .touch-controls>div:first-child{grid-template-columns:repeat(2,68px)}
 #app.immersive.touch[data-screen=game] .touch-controls [data-control=down]{grid-column:1/-1;grid-row:1;justify-self:center}
 #app.immersive.touch[data-screen=game] .touch-controls [data-control=left]{grid-column:1;grid-row:2}
 #app.immersive.touch[data-screen=game] .touch-controls [data-control=right]{grid-column:2;grid-row:2}
-#app.immersive.touch[data-screen=game] .touch-controls button{width:54px;min-width:54px;height:54px;font-size:22px;border-radius:50%;background:rgba(255,253,243,.82);box-shadow:0 2px 8px rgba(0,0,0,.25)}
-#app.immersive.touch[data-screen=game] .touch-controls .touch-chomp{width:76px;height:50px;border-radius:25px;font-size:14px;background:rgba(166,65,96,.92)}
-#app.immersive.touch[data-screen=game] .touch-controls .touch-jump{width:76px;height:76px;font-size:16px;background:rgba(57,115,87,.95)}
-#app.immersive.touch[data-screen=game] .touch-controls button[data-held=true]{background:#c9dfb6;transform:scale(.93)}
+#app.immersive.touch[data-screen=game] .touch-controls button{width:68px;min-width:68px;height:68px;font-size:28px;font-weight:600;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(255,253,243,.78);color:#2f4a38;box-shadow:0 4px 12px rgba(0,0,0,.28);transition:transform .08s ease,background-color .08s ease}
+#app.immersive.touch[data-screen=game] .touch-controls .touch-chomp{width:96px;height:62px;border-radius:31px;font-size:17px;background:rgba(166,65,96,.9);color:#fff}
+#app.immersive.touch[data-screen=game] .touch-controls .touch-jump{width:96px;height:96px;font-size:20px;background:rgba(57,115,87,.92);color:#fff}
+#app.immersive.touch[data-screen=game] .touch-controls button[data-held=true]{background:#c9dfb6;color:#2f4a38;transform:scale(.92);box-shadow:0 1px 4px rgba(0,0,0,.25)}
 @media (orientation:portrait) and (max-width:600px){#app.immersive.touch[data-screen=game] .rotate-prompt{display:flex;position:fixed;inset:0;z-index:60;background:#22301f;color:#fffdf3;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px}.rotate-prompt svg{width:76px;height:76px;fill:none;stroke:#fffdf3;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;animation:rotate-hint 2.4s ease-in-out infinite}.rotate-prompt strong{font:500 22px Fredoka,sans-serif}.rotate-prompt span{font-size:14px;opacity:.8}}
 @keyframes rotate-hint{0%,25%{transform:rotate(0)}55%,85%{transform:rotate(-90deg)}100%{transform:rotate(0)}}

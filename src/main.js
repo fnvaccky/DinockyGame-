@@ -167,8 +167,8 @@ export class App {
   show(screen, focus = true) {
     if (!['auth', 'settings'].includes(screen) && (!this.user || !this.snapshot)) screen = 'auth';
     this.screen = screen; $('app').dataset.screen = screen;
-    // Full screen is for playing; menus go back to the normal page.
-    if (!['game', 'results'].includes(screen) && isFullscreen()) void exitFullscreen();
+    // Full screen is only for playing: finishing a level or opening a menu leaves it.
+    if (screen !== 'game' && isFullscreen()) void exitFullscreen();
     for (const [name, id] of Object.entries(PANELS)) $(id).hidden = name !== screen;
     $('worldLayout').hidden = screen === 'game';
     if (screen === 'game') this.scene.stop();
