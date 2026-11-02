@@ -322,8 +322,13 @@ test('Hard Mode: one heart, no checkpoint, faster enemies', async () => {
   hard.update(dt, player); assert.equal(hard.checkpoint.active, false);
 });
 
-test('Sir Oinksalot charges, gets dizzy, can only be chomped while dizzy, and leaves the flag behind', async () => {
+test('Sir Oinksalot charges, gets dizzy, can only be chomped while dizzy, and leaves the flag behind', async t => {
   const { createLevel } = await import('../src/levels/LevelRegistry.js');
+  // Apples fall at random spots; a seeded sequence keeps the scripted fight repeatable.
+  const random = Math.random;
+  let seed = 7;
+  Math.random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  t.after(() => { Math.random = random; });
   for (const hard of [false, true]) {
     const level = createLevel('1-4', { hard }), boss = level.boss, physics = new Physics();
     const player = new Player(1300, 480); player.isGrounded = true; level.status = 'playing';
