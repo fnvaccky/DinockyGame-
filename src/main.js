@@ -3,7 +3,7 @@ import { GameSession } from './game/GameSession.js';
 import { SoundEngine } from './audio/SoundEngine.js';
 import { AccountService } from './services/AccountService.js';
 import { RewardQueue } from './services/RewardQueue.js';
-import { CATALOG } from './cosmetics.js';
+import { CATALOG, normalizeCosmetics } from './cosmetics.js';
 
 const $ = id => document.getElementById(id);
 const PANELS = { auth: 'authPanel', lobby: 'lobbyPanel', levels: 'levelsPanel', shop: 'shopPanel', settings: 'settingsPanel', results: 'resultsPanel', game: 'gamePanel' };
@@ -141,7 +141,11 @@ export class App {
     this.scene.setCosmetics(this.equipped());
     if (this.screen === 'shop') this.selectItem(this.selectedItem || 'pink');
   }
-  equipped() { return { color: this.snapshot?.profile.equipped_color || 'pink', accessory: this.snapshot?.profile.equipped_accessory || null }; }
+  equipped() {
+    const profile = this.snapshot?.profile;
+    // equipped_accessory is the pre-slot column, still read until the slot migration is applied.
+    return normalizeCosmetics({ color: profile?.equipped_color, accessory: profile?.equipped_accessory, accessories: [profile?.equipped_hat, profile?.equipped_neck, profile?.equipped_face] });
+  }
   show(screen, focus = true) {
     if (!['auth', 'settings'].includes(screen) && (!this.user || !this.snapshot)) screen = 'auth';
     this.screen = screen; $('app').dataset.screen = screen;
@@ -206,7 +210,7 @@ export class App {
     $('signOut').onclick = () => { void this.signOut(); };
     $('buyItem').onclick = () => { void this.shopAction('purchase', this.selectedItem); };
     $('equipItem').onclick = () => { void this.shopAction('equip', this.selectedItem); };
-    $('removeAccessory').onclick = () => { void this.shopAction('equip', null); };
+    $('removeAccessory').onclick = () => { void this.shopAction('unequip', this.selectedItem); };
     $('retrySave').onclick = () => { void this.syncPending(); };
     window.addEventListener('online', () => { void this.syncPending(); this.updateConnection(); if (this.screen === 'shop') this.selectItem(this.selectedItem); });
     window.addEventListener('offline', () => { this.updateConnection(); if (this.screen === 'shop') this.selectItem(this.selectedItem); });
@@ -352,14 +356,16 @@ export class App {
   }
   selectItem(id) {
     const item = CATALOG.find(value => value.id === id) || CATALOG[0]; this.selectedItem = item.id;
-    const equipped = this.equipped(), owned = this.snapshot?.owned.includes(item.id), isEquipped = equipped[item.kind] === item.id;
-    this.scene.setCosmetics({ ...equipped, [item.kind]: item.id });
+    const equipped = this.equipped(), owned = this.snapshot?.owned.includes(item.id);
+    const isEquipped = item.kind === 'color' ? equipped.color === item.id : equipped.accessories.includes(item.id);
+    // Trying on an accessory swaps only its own slot, so the rest of the outfit stays on.
+    this.scene.setCosmetics(item.kind === 'color' ? { ...equipped, color: item.id } : { ...equipped, accessories: [...equipped.accessories, item.id] });
     document.querySelectorAll('[data-item]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.item === item.id)));
     $('itemName').textContent = item.name; $('itemDescription').textContent = item.description;
     $('buyItem').hidden = owned; $('buyItem').textContent = `Buy · ${item.price} coins`;
     $('buyItem').disabled = !navigator.onLine || !this.snapshot || this.snapshot.profile.coins < item.price;
     $('equipItem').hidden = !owned; $('equipItem').disabled = isEquipped || !navigator.onLine; $('equipItem').textContent = isEquipped ? 'Equipped' : 'Equip';
-    $('removeAccessory').hidden = !equipped.accessory;
+    $('removeAccessory').hidden = !(item.kind === 'accessory' && isEquipped);
     $('removeAccessory').disabled = !navigator.onLine;
     $('shopMessage').textContent = !navigator.onLine ? 'You can try on looks offline. Reconnect to buy or equip.' : owned ? (isEquipped ? 'This look is ready for your next adventure.' : 'Looking good! Equip it to keep it.') : this.snapshot?.profile.coins < item.price ? 'Finish a level to earn more coins for this look.' : 'Just trying it on. Buy it to make it yours.';
   }

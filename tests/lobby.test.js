@@ -19,10 +19,11 @@ async function loadModel(url) {
 }
 const loadPlush = () => loadModel('/models/dinocky-plush.glb');
 
-function assertOnlyAccessory(model, id) {
-  for (const key of ACCESSORIES) assert.equal(model.accessories[key].visible, key === id, `${key} visible with ${id}`);
-  assert.equal(model.headSpikes.visible, !HATS.includes(id), `head spikes with ${id}`);
+function assertWearing(model, ids) {
+  for (const key of ACCESSORIES) assert.equal(model.accessories[key].visible, ids.includes(key), `${key} visible with ${ids}`);
+  assert.equal(model.headSpikes.visible, !ids.some(id => HATS.includes(id)), `head spikes with ${ids}`);
 }
+const assertOnlyAccessory = (model, id) => assertWearing(model, id ? [id] : []);
 
 test('approved GLB replaces fallback, retains pending cosmetics and blinks in place', async () => {
   const model = new Dinocky3D(); model.setCosmetics({ color: 'mint', accessory: 'cap' });
@@ -56,11 +57,20 @@ test('failed and late GLB loads leave a safe lifecycle', async () => {
 });
 
 test('normalizeCosmetics accepts every catalog accessory and nothing else', () => {
-  for (const id of ACCESSORIES) assert.equal(normalizeCosmetics({ accessory: id }).accessory, id);
+  for (const id of ACCESSORIES) {
+    assert.deepEqual(normalizeCosmetics({ accessory: id }).accessories, [id]);
+    assert.deepEqual(normalizeCosmetics({ accessories: [id] }).accessories, [id]);
+  }
   assert.deepEqual(ACCESSORIES, ['cap', 'scarf', 'bee_hat', 'frog_hat', 'glasses']);
-  for (const accessory of ['mint', 'pink', 'crown', '', null, undefined, 42]) assert.equal(normalizeCosmetics({ accessory }).accessory, null);
-  assert.deepEqual(normalizeCosmetics({ color: 'nope', accessory: 'glasses' }), { color: 'pink', accessory: 'glasses' });
-  assert.deepEqual(normalizeCosmetics(), { color: 'pink', accessory: null });
+  for (const accessory of ['mint', 'pink', 'crown', '', null, undefined, 42]) {
+    assert.deepEqual(normalizeCosmetics({ accessory }).accessories, []);
+    assert.deepEqual(normalizeCosmetics({ accessories: [accessory] }).accessories, []);
+  }
+  assert.deepEqual(normalizeCosmetics({ color: 'nope', accessory: 'glasses' }), { color: 'pink', accessories: ['glasses'] });
+  assert.deepEqual(normalizeCosmetics(), { color: 'pink', accessories: [] });
+  // One per slot, in drawing order; a later hat replaces an earlier one.
+  assert.deepEqual(normalizeCosmetics({ accessories: ['frog_hat', 'glasses', 'scarf', 'cap'] }).accessories, ['scarf', 'glasses', 'cap']);
+  assert.deepEqual(normalizeCosmetics({ accessory: 'cap', accessories: ['bee_hat', 'glasses'] }).accessories, ['glasses', 'bee_hat']);
   assert.equal(CATALOG.find(item => item.id === 'scarf').color, '#C62828');
 });
 
@@ -71,6 +81,20 @@ test('every accessory toggles alone and head spikes hide only under hats', async
   for (const target of [fallback, model]) {
     for (const id of [...ACCESSORIES, null]) { target.setCosmetics({ color: 'sky', accessory: id }); assertOnlyAccessory(target, id); }
   }
+});
+
+test('a hat, scarf and glasses stack; hats replace each other; glasses drop under the cap', async () => {
+  const fallback = new Dinocky3D();
+  const model = new Dinocky3D(); await model.load({ loadAsync: loadModel }); await model.accessoriesReady;
+  for (const target of [fallback, model]) {
+    target.setCosmetics({ accessories: ['bee_hat', 'scarf', 'glasses'] }); assertWearing(target, ['bee_hat', 'scarf', 'glasses']);
+    target.setCosmetics({ accessories: ['bee_hat', 'scarf', 'glasses', 'frog_hat'] }); assertWearing(target, ['frog_hat', 'scarf', 'glasses']);
+    target.setCosmetics({ accessories: ['scarf', 'glasses'] }); assertWearing(target, ['scarf', 'glasses']);
+  }
+  model.setCosmetics({ accessories: ['cap', 'glasses'] });
+  assert.ok(model.accessories.glasses.position.y < 0 && model.accessories.glasses.position.z > 0);
+  model.setCosmetics({ accessories: ['frog_hat', 'glasses'] });
+  assert.equal(model.accessories.glasses.position.lengthSq(), 0);
 });
 
 test('accessory GLBs sit on the character: hats above the eyes, glasses over them, scarf at the neck', async () => {

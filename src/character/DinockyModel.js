@@ -215,7 +215,8 @@ export class DinockyModel {
     this._drawTail(ctx, colors, tailAngle);
 
     // --- 2. Yellow Dorsal Spikes (Behind body & spine) ---
-    this._drawSpikes(ctx, colors, !isGhost && HATS.includes(this.cosmetics.accessory));
+    const { accessories } = normalizeCosmetics(this.cosmetics);
+    this._drawSpikes(ctx, colors, !isGhost && accessories.some(id => HATS.includes(id)));
 
     // --- 3. Left / Back Leg ---
     this._drawLeg(ctx, colors, -7, 20, legL_Angle, true);
@@ -238,8 +239,8 @@ export class DinockyModel {
     // --- 9. Stubby Dinosaur Arm ---
     this._drawArm(ctx, colors, armAngle);
 
-    // --- 10. Accessory (one slot) ---
-    if (!isGhost && this.cosmetics.accessory) this._drawAccessory(ctx, this.cosmetics.accessory);
+    // --- 10. Accessories: scarf, then glasses, then hat on top ---
+    if (!isGhost) for (const id of accessories) this._drawAccessory(ctx, id);
 
     ctx.restore();
   }

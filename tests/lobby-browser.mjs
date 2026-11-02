@@ -43,7 +43,7 @@ try {
       if (url.pathname.includes('/rpc/')) {
         const name = url.pathname.split('/').at(-1);
         if (name === 'finish_run' && failFinish) return route.abort('internetdisconnected');
-        const names = { game_snapshot: [], start_run: [], purchase_cosmetic: ['p_item_id'], equip_cosmetic: ['p_item_id'], finish_run: ['p_run_id', 'p_score', 'p_elapsed', 'p_completed'] };
+        const names = { game_snapshot: [], start_run: [], purchase_cosmetic: ['p_item_id'], equip_cosmetic: ['p_item_id'], unequip_cosmetic: ['p_item_id'], finish_run: ['p_run_id', 'p_score', 'p_elapsed', 'p_completed'] };
         if (!names[name]) return reply({ message: 'Unknown operation' }, 404);
         try {
           await asUser(db, id);

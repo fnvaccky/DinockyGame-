@@ -22,5 +22,6 @@ export class AccountService {
   startRun() { return this.rpc('start_run'); }
   purchase(id) { return this.rpc('purchase_cosmetic', { p_item_id: id }); }
   equip(id) { return this.rpc('equip_cosmetic', { p_item_id: id }); }
+  unequip(id) { return this.rpc('unequip_cosmetic', { p_item_id: id }); }
   finishRun(result) { return this.rpc('finish_run', { p_run_id: result.runId, p_score: result.score, p_elapsed: result.elapsed, p_completed: result.completed }); }
 }

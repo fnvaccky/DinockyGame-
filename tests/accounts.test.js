@@ -64,7 +64,7 @@ test('database account isolation, reward integrity, and atomic inventory operati
   } finally { await db.close(); }
 });
 
-test('new accessories match the client catalog and share the single accessory slot', async () => {
+test('new accessories match the client catalog and stack one per slot', async () => {
   const db = await createDatabase();
   try {
     await asUser(db, USER_A);
@@ -78,12 +78,25 @@ test('new accessories match the client catalog and share the single accessory sl
     let snapshot = await rpc(db, 'purchase_cosmetic', ['bee_hat']);
     assert.equal(snapshot.profile.coins, 300); assert.ok(snapshot.owned.includes('bee_hat'));
     snapshot = await rpc(db, 'equip_cosmetic', ['bee_hat']);
-    assert.equal(snapshot.profile.equipped_accessory, 'bee_hat');
+    assert.equal(snapshot.profile.equipped_hat, 'bee_hat');
     await rpc(db, 'purchase_cosmetic', ['glasses']);
     snapshot = await rpc(db, 'equip_cosmetic', ['glasses']);
-    assert.equal(snapshot.profile.coins, 175); assert.equal(snapshot.profile.equipped_accessory, 'glasses');
+    assert.equal(snapshot.profile.coins, 175);
+    assert.equal(snapshot.profile.equipped_hat, 'bee_hat'); assert.equal(snapshot.profile.equipped_face, 'glasses');
     await assert.rejects(rpc(db, 'purchase_cosmetic', ['frog_hat']), /Not enough coins/);
+    await db.exec('reset role'); await db.query('update public.profiles set coins = 500 where user_id = $1', [USER_A]); await asUser(db, USER_A);
+    await rpc(db, 'purchase_cosmetic', ['scarf']); await rpc(db, 'purchase_cosmetic', ['cap']);
+    snapshot = await rpc(db, 'equip_cosmetic', ['scarf']);
+    assert.deepEqual([snapshot.profile.equipped_hat, snapshot.profile.equipped_neck, snapshot.profile.equipped_face], ['bee_hat', 'scarf', 'glasses']);
+    // A second hat replaces the first; the scarf and glasses stay on.
+    snapshot = await rpc(db, 'equip_cosmetic', ['cap']);
+    assert.deepEqual([snapshot.profile.equipped_hat, snapshot.profile.equipped_neck, snapshot.profile.equipped_face], ['cap', 'scarf', 'glasses']);
+    snapshot = await rpc(db, 'unequip_cosmetic', ['glasses']);
+    assert.deepEqual([snapshot.profile.equipped_hat, snapshot.profile.equipped_neck, snapshot.profile.equipped_face], ['cap', 'scarf', null]);
+    assert.ok(!('equipped_accessory' in snapshot.profile));
     snapshot = await rpc(db, 'equip_cosmetic', [null]);
-    assert.equal(snapshot.profile.equipped_accessory, null);
+    assert.deepEqual([snapshot.profile.equipped_hat, snapshot.profile.equipped_neck, snapshot.profile.equipped_face], [null, null, null]);
+    await db.exec('reset role; set role anon');
+    await assert.rejects(rpc(db, 'unequip_cosmetic', ['cap']), /permission denied/);
   } finally { await db.close(); }
 });

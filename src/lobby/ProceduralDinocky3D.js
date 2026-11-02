@@ -123,9 +123,9 @@ export class ProceduralDinocky3D extends THREE.Group {
     const lensMat = mat('#F4F4FF', { roughness: 0.05, transparent: true, opacity: 0.18, depthWrite: false });
     for (const side of [-1, 1]) {
       const rim = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.016, 8, 32), frameMat);
-      rim.position.set(side * 0.29, 2.57, 0.53); glasses.add(rim);
+      rim.position.set(side * 0.29, 2.55, 0.53); glasses.add(rim);
       const lens = new THREE.Mesh(new THREE.CircleGeometry(0.125, 32), lensMat);
-      lens.position.set(side * 0.29, 2.57, 0.525); glasses.add(lens);
+      lens.position.set(side * 0.29, 2.55, 0.525); glasses.add(lens);
       this.tube(glasses, [[0.42, 2.6, 0.5], [0.53, 2.61, 0.3], [0.575, 2.6, 0], [0.56, 2.56, -0.15]].map(([x, y, z]) => new THREE.Vector3(side * x, y, z)), 0.012, goldMat);
     }
     this.tube(glasses, [new THREE.Vector3(-0.16, 2.6, 0.535), new THREE.Vector3(0, 2.64, 0.55), new THREE.Vector3(0.16, 2.6, 0.535)], 0.012, goldMat);
@@ -158,11 +158,11 @@ export class ProceduralDinocky3D extends THREE.Group {
   setCosmetics(value) {
     const cosmetics = normalizeCosmetics(value);
     this.skin.color.set(palette(cosmetics.color).color);
-    this.showAccessory(cosmetics.accessory);
+    this.showAccessories(cosmetics.accessories);
   }
-  showAccessory(id) {
-    for (const [key, group] of Object.entries(this.accessories)) group.visible = key === id;
-    if (this.headSpikes) this.headSpikes.visible = !HATS.includes(id);
+  showAccessories(ids) {
+    for (const [key, group] of Object.entries(this.accessories)) group.visible = ids.includes(key);
+    if (this.headSpikes) this.headSpikes.visible = !ids.some(id => HATS.includes(id));
   }
   animate(time, reducedMotion) {
     this.rig.scale.y = reducedMotion ? 1 : 1 + Math.sin(time * 2.6) * 0.012;

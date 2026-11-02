@@ -34,9 +34,9 @@ See [Supabase SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp). In A
 
 ## Accounts and economy
 
-The deployed migration is `supabase/migrations/20261025061429_dinocky_accounts_shop.sql`. Profiles, owned cosmetics, level bests and run records have account-scoped read policies. Authenticated clients cannot directly modify wallets or ownership. RPCs start runs, finish runs, buy and equip items; server functions lock the profile and enforce ownership. Purchases deduct and grant in one transaction. Duplicate completion requests return the same reward.
+Migrations in `supabase/migrations/` run in filename order: the accounts/shop schema, the bucket hats and glasses rows, then accessory slots (`equipped_hat`, `equipped_neck`, `equipped_face` and `unequip_cosmetic`). Profiles, owned cosmetics, level bests and run records have account-scoped read policies. Authenticated clients cannot directly modify wallets or ownership. RPCs start runs, finish runs, buy and equip items; server functions lock the profile and enforce ownership. Purchases deduct and grant in one transaction. Duplicate completion requests return the same reward.
 
-Starting balance is zero. The first successful World 1-1 clear earns 100 coins; later clears earn 25. Failures/abandoned runs earn zero. Pink is free, mint/lavender cost 75, sky blue 100, cap/scarf 150. One color and one accessory can be equipped. Buying does not equip automatically.
+Starting balance is zero. The first successful World 1-1 clear earns 100 coins; later clears earn 25. Failures/abandoned runs earn zero. Pink is free, mint/lavender cost 75, sky blue 100, glasses 125, cap/scarf 150, bee/frog bucket hats 200. One color is equipped, plus up to three accessories: one hat (cap, bee or frog bucket), the scarf and the glasses. Equipping a hat replaces the current hat; Take off removes a single accessory. Buying does not equip automatically.
 
 Completed results queue locally by account and run ID until confirmed; no optimistic coins are credited. Interrupted requests retry with the same ID. Clearing browser storage before a pending result reaches the server can lose that pending submission. Run validation checks plausible time/score and ownership; client-side gameplay is not a competitive anti-cheat system.
 

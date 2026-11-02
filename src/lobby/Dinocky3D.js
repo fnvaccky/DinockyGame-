@@ -4,6 +4,8 @@ import { ProceduralDinocky3D } from './ProceduralDinocky3D.js';
 import { CATALOG, normalizeCosmetics, palette } from '../cosmetics.js';
 
 const ACCESSORY_IDS = CATALOG.filter(item => item.kind === 'accessory').map(item => item.id);
+// Measured in Blender: drops the glasses just below the tilted cap brim (glTF units, front +Z).
+const GLASSES_UNDER_CAP = new THREE.Vector3(0, -0.02, 0.06);
 const modelUrl = path => `${import.meta.env?.BASE_URL || '/'}models/${path}`;
 
 function releaseTree(root, retainedMaterials = new Set()) {
@@ -82,7 +84,7 @@ export class Dinocky3D extends ProceduralDinocky3D {
     scene.name = `DinockyAccessory_${id}`;
     scene.traverse(object => { if (object.isMesh) { object.castShadow = true; object.receiveShadow = false; } });
     const fallback = this.accessories[id];
-    this.model.add(scene); this.accessories[id] = scene;
+    this.model.add(scene); this.accessories[id] = scene; (this.loadedAccessories ||= new Set()).add(id);
     if (fallback) {
       const retained = new Set();
       for (const other of Object.values(this.accessories)) other.traverse(o => {
@@ -99,7 +101,14 @@ export class Dinocky3D extends ProceduralDinocky3D {
       if (this.cosmetics.color === 'pink') material.color.copy(this.originalPink);
       else material.color.set(palette(this.cosmetics.color).color);
     }
-    this.showAccessory(this.cosmetics.accessory);
+    this.showAccessories(this.cosmetics.accessories);
+  }
+
+  showAccessories(ids) {
+    super.showAccessories(ids);
+    if (this.loadedAccessories?.has('glasses')) {
+      this.accessories.glasses.position.copy(ids.includes('cap') ? GLASSES_UNDER_CAP : new THREE.Vector3());
+    }
   }
 
   // MeadowScene owns disposal of the attached geometry. This also guards late loads.

@@ -30,7 +30,7 @@ The `DINOCKY | Accessories` collections are exported by `export_accessories.py`,
 - Same frame as the character (Y up, front +Z, world transforms baked), so each file is parented directly under the loaded character scene with no offsets.
 - Modifiers are baked, curves become meshes, and each accessory is decimated to stay under 150 KiB. Each accessory is one mesh with one primitive per material, and only positions and normals are exported.
 - Procedural crochet/knit bump shading is replaced with plain Principled materials. The bee crown is cut along the original `sin(38·z)` stripe boundaries in its local frame and split into yellow and black materials. Lenses and nose pads use alpha blend.
-- All accessories share the single equipped-accessory slot. Glasses only fit without a hat, which the single slot guarantees.
+- Accessories stack one per slot (hat, neck, face). Glasses fit under both bucket hats as exported; with the tilted cap the game lowers them 0.02 and moves them forward 0.06 (measured in Blender against the cap brim).
 - `OLD | Accessories (pre-fix)` is not exported. Per-accessory stats are recorded in `model-report.json`.
 
 The exported model is integrated into the login and lobby meadow using Three.js GLTFLoader. Rotation, breathing, blinking, recolors, and all five accessories are supported; accessory GLBs replace the procedural overlays once loaded. The original procedural model handles loading failures. Automated desktop/mobile browser flows and asset-loading tests pass; physical-device performance has not been benchmarked. The playable level remains the existing 2D Canvas game.
