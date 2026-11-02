@@ -15,7 +15,8 @@ export class PigBoss {
   constructor({ left, right, hard = false }) {
     this.name = 'Sir Oinksalot';
     this.isBoss = true;
-    this.w = 150; this.h = 96;
+    // Short enough (top at y 404) that Dinocky on an 80px ledge stays above the charge.
+    this.w = 150; this.h = 76;
     this.left = left; this.right = right;
     this.x = right - 260; this.y = FLOOR - this.h;
     this.vx = 0; this.vy = 0; this.dir = -1;
@@ -147,7 +148,7 @@ export class PigBoss {
     if (this.state === 'defeated') ctx.rotate(-this.dir * Math.min(1.4, this.stateTime * 2));
     if (this.state === 'windup') ctx.translate((Math.random() - 0.5) * 4, 0);
     if (this.state === 'hurt' && Math.floor(this.stateTime * 14) % 2) ctx.globalAlpha = 0.45;
-    ctx.scale(this.dir, 1);
+    ctx.scale(this.dir * 0.85, 0.85);
     const bob = this.state === 'charge' ? Math.abs(Math.sin(this.timer * 18)) * 4 : Math.sin(this.timer * 3) * 1.5;
     const pink = '#F9A8C9', dark = '#E879A6', blush = this.state === 'windup' || this.state === 'charge' ? '#F43F5E' : '#FB7185';
 

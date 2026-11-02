@@ -343,7 +343,7 @@ test('Sir Oinksalot charges, gets dizzy, can only be chomped while dizzy, and le
         player.powerManager.chompCooldown = 0; player.powerManager.triggerChomp(player, level.enemies);
       } else if (boss.state !== 'defeated' && boss.isAlive) {
         // Wait on the ledge away from the pig; chomping now must not hurt him.
-        player.x = boss.x + boss.w / 2 > 1680 ? 1290 : 2070; player.y = 360;
+        player.x = boss.x + boss.w / 2 > 1680 ? 1290 : 2070; player.y = 400;
         if (boss.state === 'windup') {
           const hp = boss.hp; player.powerManager.chompCooldown = 0; player.powerManager.triggerChomp(player, level.enemies);
           chompedTooEarly ||= boss.hp !== hp;
@@ -362,4 +362,54 @@ test('Sir Oinksalot charges, gets dizzy, can only be chomped while dizzy, and le
     for (const state of ['intro', 'windup', 'charge', 'dizzy', 'hurt', 'leap', 'defeated']) assert.ok(states.has(state), state);
     assert.ok(level.obstacles.includes(level.gate), 'the arena gate closes');
   }
+});
+
+test('every platform can be reached by jumping or dropping from the start of its level', async () => {
+  const { createLevel } = await import('../src/levels/LevelRegistry.js');
+  // Measure the real full jump instead of assuming it.
+  const probe = new Player(100, 480); probe.isGrounded = true;
+  const physics = new Physics(); let top = 480;
+  const hold = { ...noInput, jump: true, jumpJustPressed: true };
+  for (let i = 0; i < 90; i++) { physics.update(probe, hold, [{ x: 0, y: 480, w: 1000, h: 60 }], [], dt); hold.jumpJustPressed = false; top = Math.min(top, probe.y); }
+  const rise = 480 - top - 4;
+  assert.ok(rise > 95 && rise < 110, `jump rise ${rise}`);
+  for (const id of ['1-1', '1-2', '1-3', '1-4']) {
+    const level = createLevel(id);
+    const surfaces = [...level.obstacles.filter(o => !['boundary', 'barrier'].includes(o.type) && o !== level.gate), ...level.oneWayPlatforms]
+      .map(s => s.moving ? { x: Math.min(s.baseX, s.baseX + s.dx), y: Math.max(s.baseY, s.baseY + s.dy), w: s.w + Math.abs(s.dx), top: Math.min(s.baseY, s.baseY + s.dy) } : { ...s, top: s.y });
+    const near = (a, b, gap) => a.x < b.x + b.w + gap && a.x + a.w > b.x - gap;
+    const reached = new Set(surfaces.filter(s => s.type === 'ground' && s.x === 0));
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const t of surfaces) {
+        if (reached.has(t)) continue;
+        // Up: within one jump and a short run-up; down: walk or hop off a higher surface.
+        if ([...reached].some(s => (s.y > t.y ? s.top - t.y <= rise && near(s, t, 170) : near(s, t, 240)))) { reached.add(t); grew = true; }
+      }
+    }
+    const missing = surfaces.filter(s => !reached.has(s) && s.y < 480).map(s => `${s.x},${s.y}`);
+    assert.deepEqual(missing, [], `${id} has unreachable platforms`);
+  }
+});
+
+test('Hog Hollow ledges are one real jump up and keep Dinocky above the charging pig', async () => {
+  const { createLevel } = await import('../src/levels/LevelRegistry.js');
+  const level = createLevel('1-4'), physics = new Physics();
+  const ledges = level.oneWayPlatforms.filter(p => p.x >= 1200);
+  assert.equal(ledges.length, 3);
+  for (const ledge of ledges) {
+    const player = new Player(ledge.x - 30, 480); player.isGrounded = true;
+    for (let i = 0; i < 120; i++) {
+      const input = { ...noInput, right: player.x < ledge.x + ledge.w / 2, jump: true, jumpJustPressed: i === 0 };
+      physics.update(player, input, level.obstacles, level.oneWayPlatforms, dt);
+    }
+    assert.equal(player.y, ledge.y, `landed on the ledge at ${ledge.x}`);
+  }
+  // A charge passes underneath without touching Dinocky.
+  const boss = level.boss, rider = new Player(1300, ledges[0].y);
+  rider.isGrounded = true;
+  boss.x = 1500; boss.state = 'charge'; boss.vx = -400;
+  level.status = 'playing'; level.arenaLocked = true;
+  for (let i = 0; i < 90 && boss.state === 'charge'; i++) { level.update(dt, rider); rider.y = ledges[0].y; }
+  assert.equal(boss.state, 'dizzy'); assert.equal(level.health, 3);
 });

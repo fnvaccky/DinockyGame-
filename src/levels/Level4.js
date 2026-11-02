@@ -21,9 +21,9 @@ export class Level4 extends BaseLevel {
     const rows = Array.from({ length: 14 }, () => Array(54).fill('.'));
     const run = (row, start, end, symbol) => rows[row].fill(symbol, start, end);
     for (const row of [12, 13]) { run(row, 0, 14, '#'); run(row, 17, 54, '#'); }
-    run(9, 10, 14, '='); run(8, 15, 19, '=');
-    // Arena ledges sit above the charging pig; the middle shelf helps against the leaps.
-    run(9, 31, 34, '='); run(9, 40, 44, '='); run(9, 50, 53, '=');
+    run(10, 10, 14, '='); run(8, 15, 19, '=');
+    // Arena ledges are one easy jump up (80px) and sit just above the charging pig.
+    run(10, 31, 34, '='); run(10, 40, 44, '='); run(10, 50, 53, '=');
 
     this.tilemap = new Tilemap({ rows: rows.map(row => row.join('')) });
     this.width = this.tilemap.width;
@@ -40,9 +40,9 @@ export class Level4 extends BaseLevel {
     this.foodItems = [
       new CollectibleFood(200, 448, 'PIZZA'),
       new CollectibleFood(1060, 448, 'BURGER'),
-      new CollectibleFood(1680, 328, 'PIZZA')
+      new CollectibleFood(1680, 368, 'PIZZA')
     ];
-    this.treats = [new StarTreat(460, 300), new StarTreat(700, 260), new StarTreat(1280, 300), new StarTreat(2080, 300)];
+    this.treats = [new StarTreat(460, 360), new StarTreat(700, 280), new StarTreat(1280, 340), new StarTreat(2080, 340)];
 
     this.boss = new PigBoss({ left: ARENA_LEFT, right: this.width });
     this.enemies = [
