@@ -5,6 +5,7 @@ import { AccountService } from './services/AccountService.js';
 import { RewardQueue } from './services/RewardQueue.js';
 import { CATALOG, normalizeCosmetics } from './cosmetics.js';
 import { LEVELS } from './levels/LevelRegistry.js';
+import { isTouchDevice, canFullscreen, isFullscreen, isInstalledApp, enterFullscreen, exitFullscreen } from './ui/Fullscreen.js';
 
 const $ = id => document.getElementById(id);
 const PANELS = { auth: 'authPanel', lobby: 'lobbyPanel', levels: 'levelsPanel', shop: 'shopPanel', settings: 'settingsPanel', results: 'resultsPanel', game: 'gamePanel' };
@@ -166,6 +167,8 @@ export class App {
   show(screen, focus = true) {
     if (!['auth', 'settings'].includes(screen) && (!this.user || !this.snapshot)) screen = 'auth';
     this.screen = screen; $('app').dataset.screen = screen;
+    // Full screen is for playing; menus go back to the normal page.
+    if (!['game', 'results'].includes(screen) && isFullscreen()) void exitFullscreen();
     for (const [name, id] of Object.entries(PANELS)) $(id).hidden = name !== screen;
     $('worldLayout').hidden = screen === 'game';
     if (screen === 'game') this.scene.stop();
@@ -225,6 +228,22 @@ export class App {
       };
     }
     $('pauseGame').onclick = () => this.game.pause();
+    $('fullscreenToggle').hidden = !canFullscreen();
+    $('fullscreenToggle').onclick = () => { void (isFullscreen() ? exitFullscreen() : enterFullscreen()); };
+    const syncFullscreen = () => {
+      const on = isFullscreen();
+      // Phones always play edge to edge; on desktop the same layout is used in full screen.
+      $('app').classList.toggle('touch', isTouchDevice());
+      $('app').classList.toggle('immersive', on || isTouchDevice());
+      $('fullscreenToggle').setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+      $('fullscreenToggle').setAttribute('aria-pressed', String(on));
+    };
+    document.addEventListener('fullscreenchange', syncFullscreen); document.addEventListener('webkitfullscreenchange', syncFullscreen);
+    syncFullscreen();
+    matchMedia('(pointer: coarse)').addEventListener?.('change', syncFullscreen);
+    // Turning a phone upright pauses play; the rotate prompt asks for landscape again.
+    this.portrait = matchMedia('(orientation: portrait) and (max-width: 600px)');
+    this.portrait.onchange = event => { if (event.matches && this.screen === 'game' && isTouchDevice()) this.game.pause(); };
     $('resumeGame').onclick = () => { $('pauseOverlay').hidden = true; this.game.resume(); $('gameCanvas').focus(); };
     $('leaveGame').onclick = () => { void this.abandon(); this.show('lobby'); };
     $('settingsOpen').onclick = () => { if (this.screen === 'settings') return; this.settingsReturn = this.screen; if (this.screen === 'game') this.game.pause(); this.show('settings'); };
@@ -288,6 +307,8 @@ export class App {
   }
   async startLevel(levelId = this.selectedLevel || '1-1') {
     if (this.starting || !this.user) return;
+    // Still inside the tap that started the level, which browsers require for full screen.
+    if (isTouchDevice()) this.goFullscreen();
     this.starting = true; this.selectedLevel = levelId; this.busy(true, 'Packing your snacks…');
     const userId = this.user.id;
     try {
@@ -300,6 +321,16 @@ export class App {
       this.game.start(runId, this.equipped(), levelId, { hard }); $('gameCanvas').focus();
     } catch (error) { this.toast(navigator.onLine ? safeMessage(error) : 'Connect to the internet to start an adventure.'); }
     finally { this.starting = false; this.busy(false); }
+  }
+  goFullscreen() {
+    if (canFullscreen()) { void enterFullscreen(); return; }
+    // iPhone Safari has no full screen for pages; installing the game hides the browser bars.
+    if (isInstalledApp()) return;
+    try {
+      if (localStorage.getItem('dinocky:homeScreenTip')) return;
+      localStorage.setItem('dinocky:homeScreenTip', '1');
+    } catch { /* Show the tip anyway. */ }
+    this.toast('For full screen on iPhone: tap Share, then Add to Home Screen, and play from the new icon.');
   }
   nextLevelId(levelId) { return LEVELS[LEVELS.findIndex(level => level.id === levelId) + 1]?.id; }
   updateGameHUD(value) {

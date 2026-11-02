@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#eef3df" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dinocky" />
+  <link rel="apple-touch-icon" href="/icons/icon-180.png" />
   <meta name="description" content="Meet Dinocky, your hungry little adventure buddy. Explore Snack Meadow, chomp some veggies, and find your next favorite look." />
   <title>Dinocky · A little hungry. A lot of adventure.</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23F48B96'/%3E%3Cellipse cx='32' cy='42' rx='15' ry='17' fill='%23FFF5DE'/%3E%3Ccircle cx='24' cy='22' r='4' fill='%23392C32'/%3E%3Ccircle cx='42' cy='22' r='4' fill='%23392C32'/%3E%3C/svg%3E" />
@@ -91,11 +97,12 @@
       </div>
 
       <section id="gamePanel" class="game-panel" hidden aria-label="Dinocky gameplay">
-        <div class="game-hud"><strong id="gameLevelHeader"><span id="gameLevelTitle">Snack Meadow</span> <span id="gameLevelNumber">1–1</span></strong><span id="gameHearts" aria-label="3 hearts">♥♥♥</span><span>Time <b id="gameTime">240</b></span><span>Score <b id="gameScore">0</b></span><div class="power-hud-wrap"><span id="gamePower">Find a snack!</span><div id="gamePowerMeter" class="power-meter" hidden><div id="gamePowerBar" class="power-bar"></div></div></div><button id="pauseGame" class="icon-button" aria-label="Pause game"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke-width="4"/></svg></button></div>
+        <div class="game-hud"><strong id="gameLevelHeader"><span id="gameLevelTitle">Snack Meadow</span> <span id="gameLevelNumber">1–1</span></strong><span id="gameHearts" aria-label="3 hearts">♥♥♥</span><span>Time <b id="gameTime">240</b></span><span>Score <b id="gameScore">0</b></span><div class="power-hud-wrap"><span id="gamePower">Find a snack!</span><div id="gamePowerMeter" class="power-meter" hidden><div id="gamePowerBar" class="power-bar"></div></div></div><div class="hud-buttons"><button id="fullscreenToggle" class="icon-button" aria-label="Full screen" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button><button id="pauseGame" class="icon-button" aria-label="Pause game"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke-width="4"/></svg></button></div></div>
         <div class="game-view"><canvas id="gameCanvas" width="960" height="540" tabindex="0" aria-label="Dinocky Adventure. Use arrows to move, Space to jump, X to chomp."></canvas>
           <div id="pauseOverlay" class="pause-overlay" hidden><h2>Snack break?</h2><p>Your adventure can wait a little.</p><button id="resumeGame" class="button primary">Keep playing</button><button id="leaveGame" class="button secondary">Return to menu</button></div>
         </div>
         <div id="touchControls" class="touch-controls"><div><button data-control="left" aria-label="Move left">←</button><button data-control="down" aria-label="Down or stomp">↓</button><button data-control="right" aria-label="Move right">→</button></div><div><button data-control="chomp" class="touch-chomp">Chomp</button><button data-control="jump" class="touch-jump">Jump</button></div></div>
+        <div class="rotate-prompt" aria-live="polite"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="20" y="8" width="24" height="44" rx="5"/><path d="M50 40a18 18 0 0 1-18 18M46 58h-14v-6"/></svg><strong>Turn your phone sideways</strong><span>Dinocky plays best in landscape.</span></div>
         <p class="game-hint">Arrows / A D to move · Space to jump · X to chomp · Down + Jump to drop · P to pause</p>
       </section>
     </main>

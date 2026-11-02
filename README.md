@@ -1,6 +1,6 @@
 # Dinocky — Snack Meadow
 
-A Three.js meadow lobby and Supabase accounts around the original JavaScript/Canvas platformer. Login → lobby → levels → World 1-1 to 1-4 → results. Levels mix charging carrots, broccoli lobbers, swooping bees, moving platforms, crumbling wafers and pop-up spikes; World 1-4 ends with Sir Oinksalot, a giant pig boss who charges into walls and can be chomped while dizzy. Hard Mode (1 heart, no checkpoint, faster enemies) pays double coins. The shop previews and equips colors and accessories in both renderers.
+A Three.js meadow lobby and Supabase accounts around the original JavaScript/Canvas platformer. Login → lobby → levels → World 1-1 to 1-4 → results. Levels mix charging carrots, broccoli lobbers, swooping bees, moving platforms, crumbling wafers and pop-up spikes; World 1-4 ends with Sir Oinksalot, a giant pig boss who charges into walls and can be chomped while dizzy. Hard Mode (1 heart, no checkpoint, faster enemies) pays double coins. On phones the game goes full screen in landscape when a level starts (Fullscreen API on Android and iPad; on iPhone the layout fills the screen and Add to Home Screen runs it without browser bars via `manifest.webmanifest`), with a rotate prompt in portrait. The shop previews and equips colors and accessories in both renderers.
 
 ## Run locally
 
