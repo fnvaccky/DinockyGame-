@@ -7,11 +7,15 @@ export const CATALOG = Object.freeze([
   { id: 'scarf', name: 'Cozy Red Scarf', kind: 'accessory', slot: 'neck', price: 150, color: '#C62828', description: 'A warm red knit with tails that wave hello.' },
   { id: 'bee_hat', name: 'Bumble Bucket', kind: 'accessory', slot: 'hat', price: 200, color: '#F4B400', description: 'Buzzy stripes and two tiny wings. Bzz!' },
   { id: 'frog_hat', name: 'Froggy Bucket', kind: 'accessory', slot: 'hat', price: 200, color: '#7CC24A', description: 'Two big froggy eyes keep watch for snacks.' },
-  { id: 'glasses', name: 'Rosy Specs', kind: 'accessory', slot: 'face', price: 125, color: '#E8A0A8', description: 'Round rose-gold specs for spotting treats.' }
+  { id: 'glasses', name: 'Rosy Specs', kind: 'accessory', slot: 'face', price: 125, color: '#E8A0A8', description: 'Round rose-gold specs for spotting treats.' },
+  { id: 'suit', name: 'Dapper Tuxedo', kind: 'accessory', slot: 'body', price: 300, color: '#1F2A44', description: 'Navy suit, red tie and shiny shoes for fancy feasts.' },
+  { id: 'explorer', name: 'Safari Vest', kind: 'accessory', slot: 'body', price: 250, color: '#C9AE7A', description: 'Pockets, a satchel and binoculars for snack spotting.' },
+  { id: 'hoodie', name: 'Mint Dino Hoodie', kind: 'accessory', slot: 'body', price: 250, color: '#8ED1BC', description: 'A comfy hood that lets the spikes peek through.' }
 ]);
-// One accessory per slot, listed in drawing order (hats go on last).
-export const SLOTS = Object.freeze(['neck', 'face', 'hat']);
+// One accessory per slot, listed in drawing order (outfit first, hats go on last).
+export const SLOTS = Object.freeze(['body', 'neck', 'face', 'hat']);
 export const HATS = Object.freeze(CATALOG.filter(item => item.slot === 'hat').map(item => item.id));
+export const OUTFITS = Object.freeze(CATALOG.filter(item => item.slot === 'body').map(item => item.id));
 export function palette(id = 'pink') { return CATALOG.find(item => item.id === id && item.kind === 'color') || CATALOG[0]; }
 const accessory = id => CATALOG.find(item => item.kind === 'accessory' && item.id === id);
 // Accepts `accessories` (later ids win their slot) and the older single `accessory` field.

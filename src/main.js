@@ -13,7 +13,10 @@ const ACCESSORY_ICONS = {
   scarf: '<path d="M27 21l-2 18h6l3-18Z" fill="#9E1B1B"/><ellipse cx="24" cy="17" rx="17" ry="6"/><path d="M22 20l-3 21h6l2-21Z"/><circle cx="25" cy="20" r="3.5" fill="#B02020"/><path d="M20 41v3M22 41v3M24 41v3M28 39v3M30 39v3" stroke="#E25555"/>',
   bee_hat: '<ellipse cx="18" cy="11" rx="4" ry="6" transform="rotate(-30 18 11)" fill="#fff"/><ellipse cx="28" cy="11" rx="4" ry="6" transform="rotate(25 28 11)" fill="#fff"/><path d="M11 30l4-16q9-6 18 0l4 16Z"/><path d="M12 26h24l-1-4H13ZM14 19h20l-.7-3H14.7Z" fill="#1C1A17" stroke="none"/><ellipse cx="24" cy="31" rx="19" ry="5"/>',
   frog_hat: '<path d="M11 30l4-14q9-6 18 0l4 14Z"/><circle cx="17" cy="14" r="6"/><circle cx="31" cy="14" r="6"/><circle cx="17.5" cy="14" r="3.4" fill="#171113" stroke="none"/><circle cx="31.5" cy="14" r="3.4" fill="#171113" stroke="none"/><circle cx="18.6" cy="12.6" r="1.1" fill="#fff" stroke="none"/><circle cx="32.6" cy="12.6" r="1.1" fill="#fff" stroke="none"/><ellipse cx="24" cy="31" rx="19" ry="5"/>',
-  glasses: '<path d="M4 20l5 4M44 20l-5 4M20.5 24q3.5-3 7 0" fill="none" stroke="#D9A877" stroke-width="2"/><circle cx="14" cy="26" r="7.5" fill="#ffffff70" stroke="var(--swatch)" stroke-width="2.6"/><circle cx="34" cy="26" r="7.5" fill="#ffffff70" stroke="var(--swatch)" stroke-width="2.6"/>'
+  glasses: '<path d="M4 20l5 4M44 20l-5 4M20.5 24q3.5-3 7 0" fill="none" stroke="#D9A877" stroke-width="2"/><circle cx="14" cy="26" r="7.5" fill="#ffffff70" stroke="var(--swatch)" stroke-width="2.6"/><circle cx="34" cy="26" r="7.5" fill="#ffffff70" stroke="var(--swatch)" stroke-width="2.6"/>',
+  suit: '<path d="M10 44l2-26q2-6 8-8l4 6 4-6q6 2 8 8l2 26Z"/><path d="M20 10l4 6 4-6Z" fill="#F4F2EC"/><path d="M22.6 13h2.8l1 16-2.4 3-2.4-3Z" fill="#C62828" stroke="none"/><circle cx="24" cy="36" r="1.2" fill="#0E1424" stroke="none"/><path d="M31 22l2.5-3 2.5 3Z" fill="#E53935" stroke="none"/>',
+  explorer: '<path d="M10 44l2-26q2-6 8-8l3 10v24ZM38 44l-2-26q-2-6-8-8l-3 10v24Z"/><path d="M14 26h6v5h-6ZM28 26h6v5h-6Z" fill="#B39760"/><path d="M14 10l22 26" stroke="#5A2E12" stroke-width="2.2"/><rect x="19.5" y="18" width="4" height="7" rx="1.5" fill="#26221F" stroke="none"/><rect x="24.5" y="18" width="4" height="7" rx="1.5" fill="#26221F" stroke="none"/>',
+  hoodie: '<path d="M14 18q0-14 10-14t10 14Z"/><path d="M8 44l3-24q2-4 7-4h12q5 0 7 4l3 24Z"/><path d="M17 33h14v7H17Z" fill="#6DB9A2"/><path d="M21 18v8M27 18v8" stroke="#F4F1E8" stroke-width="1.6"/><path d="M19 8l2-4 2 4ZM25 7l2-4 2 4Z" fill="#FBBF24"/>'
 };
 
 export class App {
@@ -144,7 +147,7 @@ export class App {
   equipped() {
     const profile = this.snapshot?.profile;
     // equipped_accessory is the pre-slot column, still read until the slot migration is applied.
-    return normalizeCosmetics({ color: profile?.equipped_color, accessory: profile?.equipped_accessory, accessories: [profile?.equipped_hat, profile?.equipped_neck, profile?.equipped_face] });
+    return normalizeCosmetics({ color: profile?.equipped_color, accessory: profile?.equipped_accessory, accessories: [profile?.equipped_body, profile?.equipped_hat, profile?.equipped_neck, profile?.equipped_face] });
   }
   show(screen, focus = true) {
     if (!['auth', 'settings'].includes(screen) && (!this.user || !this.snapshot)) screen = 'auth';

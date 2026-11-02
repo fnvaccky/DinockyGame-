@@ -8,7 +8,7 @@ import { GameSession } from '../src/game/GameSession.js';
 import { readFile } from 'node:fs/promises';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
-import { CATALOG, HATS, normalizeCosmetics } from '../src/cosmetics.js';
+import { CATALOG, HATS, OUTFITS, normalizeCosmetics } from '../src/cosmetics.js';
 
 const ACCESSORIES = CATALOG.filter(item => item.kind === 'accessory').map(item => item.id);
 
@@ -61,7 +61,7 @@ test('normalizeCosmetics accepts every catalog accessory and nothing else', () =
     assert.deepEqual(normalizeCosmetics({ accessory: id }).accessories, [id]);
     assert.deepEqual(normalizeCosmetics({ accessories: [id] }).accessories, [id]);
   }
-  assert.deepEqual(ACCESSORIES, ['cap', 'scarf', 'bee_hat', 'frog_hat', 'glasses']);
+  assert.deepEqual(ACCESSORIES, ['cap', 'scarf', 'bee_hat', 'frog_hat', 'glasses', 'suit', 'explorer', 'hoodie']);
   for (const accessory of ['mint', 'pink', 'crown', '', null, undefined, 42]) {
     assert.deepEqual(normalizeCosmetics({ accessory }).accessories, []);
     assert.deepEqual(normalizeCosmetics({ accessories: [accessory] }).accessories, []);
@@ -72,6 +72,31 @@ test('normalizeCosmetics accepts every catalog accessory and nothing else', () =
   assert.deepEqual(normalizeCosmetics({ accessories: ['frog_hat', 'glasses', 'scarf', 'cap'] }).accessories, ['scarf', 'glasses', 'cap']);
   assert.deepEqual(normalizeCosmetics({ accessory: 'cap', accessories: ['bee_hat', 'glasses'] }).accessories, ['glasses', 'bee_hat']);
   assert.equal(CATALOG.find(item => item.id === 'scarf').color, '#C62828');
+  // One outfit at a time, worn under everything else.
+  assert.deepEqual(OUTFITS, ['suit', 'explorer', 'hoodie']);
+  assert.deepEqual(normalizeCosmetics({ accessories: ['cap', 'suit', 'glasses', 'hoodie'] }).accessories, ['hoodie', 'glasses', 'cap']);
+});
+
+test('outfits stack with a hat, scarf and glasses; the hood hides under hats', async () => {
+  const fallback = new Dinocky3D();
+  const model = new Dinocky3D(); await model.load({ loadAsync: loadModel }); await model.accessoriesReady;
+  assert.equal(model.hood.name, 'Accessory_hoodie_hood');
+  assert.ok(model.hood.parent && model.hood !== model.accessories.hoodie);
+  for (const target of [fallback, model]) {
+    target.setCosmetics({ accessories: ['explorer', 'cap', 'scarf', 'glasses'] }); assertWearing(target, ['explorer', 'scarf', 'glasses', 'cap']);
+    target.setCosmetics({ accessories: ['explorer', 'suit'] }); assertWearing(target, ['suit']);
+    target.setCosmetics({ accessories: ['hoodie'] }); assertWearing(target, ['hoodie']); assert.ok(target.hood.visible);
+    target.setCosmetics({ accessories: ['hoodie', 'frog_hat'] }); assertWearing(target, ['hoodie', 'frog_hat']); assert.equal(target.hood.visible, false);
+  }
+  // Outfits wrap the torso: as wide as the body, below the eyes, roughly centered (the satchel hangs to one side).
+  model.updateMatrixWorld(true);
+  const eyeY = new THREE.Box3().setFromObject(model.eyes[0]).getCenter(new THREE.Vector3()).y;
+  for (const id of OUTFITS) {
+    model.setCosmetics({ accessories: [id] }); model.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(model.accessories[id]);
+    assert.ok(box.min.y < 1 && box.max.x - box.min.x > 1 && Math.abs((box.max.x + box.min.x) / 2) < 0.1, `${id} on the body`);
+    if (id !== 'hoodie') assert.ok(box.max.y < eyeY, `${id} below the eyes`);
+  }
 });
 
 test('every accessory toggles alone and head spikes hide only under hats', async () => {
@@ -177,7 +202,7 @@ test('3D and 2D cosmetics share valid identities; mesh remains finite', () => {
   for (const accessory of ACCESSORIES) {
     const flat = new DinockyModel(); flat.cosmetics = { color: 'pink', accessory };
     const calls = []; const ctx = new Proxy({}, { get: (target, key) => key in target ? target[key] : (...args) => { calls.push(key); return { addColorStop() {} }; }, set: (target, key, value) => { target[key] = value; return true; } });
-    globalThis.Path2D ??= class { moveTo() {} lineTo() {} quadraticCurveTo() {} closePath() {} };
+    globalThis.Path2D ??= class { moveTo() {} lineTo() {} quadraticCurveTo() {} bezierCurveTo() {} closePath() {} };
     flat.render(ctx, { x: 0, y: 0, scale: 1, facing: 1, action: 'idle' });
     assert.ok(calls.length > 20, `${accessory} draws`);
   }

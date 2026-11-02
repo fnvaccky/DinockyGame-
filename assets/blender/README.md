@@ -26,14 +26,17 @@ The `DINOCKY | Accessories` collections are exported by `export_accessories.py`,
 | `bee_hat` | HAT \| Bee bucket (crochet) | 6,608 | 140 KiB |
 | `frog_hat` | HAT \| Frog bucket (crochet) | 6,994 | 127 KiB |
 | `glasses` | GLASSES \| Round rose-gold | 4,994 | 95 KiB |
+| `suit` | SUIT \| Navy tuxedo | 10,983 | 208 KiB |
+| `explorer` | EXPLORER \| Safari vest | 9,956 | 247 KiB |
+| `hoodie` | HOODIE \| Mint dino | 10,988 | 199 KiB |
 
 - Same frame as the character (Y up, front +Z, world transforms baked), so each file is parented directly under the loaded character scene with no offsets.
-- Modifiers are baked, curves become meshes, and each accessory is decimated to stay under 150 KiB. Each accessory is one mesh with one primitive per material, and only positions and normals are exported.
+- Modifiers are baked, curves become meshes, and each accessory is decimated to stay under 150 KiB (260 KiB for the full-body outfits). Each accessory is one mesh with one primitive per material, except the hoodie, whose hood is a separate `Accessory_hoodie_hood` node, and only positions and normals are exported.
 - Procedural crochet/knit bump shading is replaced with plain Principled materials. The bee crown is cut along the original `sin(38·z)` stripe boundaries in its local frame and split into yellow and black materials. Lenses and nose pads use alpha blend.
-- Accessories stack one per slot (hat, neck, face). Glasses fit under both bucket hats as exported; with the tilted cap the game lowers them 0.02 and moves them forward 0.06 (measured in Blender against the cap brim).
-- `OLD | Accessories (pre-fix)` is not exported. Per-accessory stats are recorded in `model-report.json`.
+- Accessories stack one per slot (body, hat, neck, face). The game hides the hoodie's hood while a hat is worn. Glasses fit under both bucket hats as exported; with the tilted cap the game lowers them 0.02 and moves them forward 0.06 (measured in Blender against the cap brim).
+- `OLD | Accessories (pre-fix)` and `WIG | Long golden` are not exported. Run with `ONLY={'suit'}` (for example) in the script's globals to re-export only some accessories. Per-accessory stats are recorded in `model-report.json`.
 
-The exported model is integrated into the login and lobby meadow using Three.js GLTFLoader. Rotation, breathing, blinking, recolors, and all five accessories are supported; accessory GLBs replace the procedural overlays once loaded. The original procedural model handles loading failures. Automated desktop/mobile browser flows and asset-loading tests pass; physical-device performance has not been benchmarked. The playable level remains the existing 2D Canvas game.
+The exported model is integrated into the login and lobby meadow using Three.js GLTFLoader. Rotation, breathing, blinking, recolors, and all eight accessories are supported; accessory GLBs replace the procedural overlays once loaded. The original procedural model handles loading failures. Automated desktop/mobile browser flows and asset-loading tests pass; physical-device performance has not been benchmarked. The playable level remains the existing 2D Canvas game.
 
 ## Rebuilding
 

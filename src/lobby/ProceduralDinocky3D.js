@@ -129,6 +129,43 @@ export class ProceduralDinocky3D extends THREE.Group {
       this.tube(glasses, [[0.42, 2.6, 0.5], [0.53, 2.61, 0.3], [0.575, 2.6, 0], [0.56, 2.56, -0.15]].map(([x, y, z]) => new THREE.Vector3(side * x, y, z)), 0.012, goldMat);
     }
     this.tube(glasses, [new THREE.Vector3(-0.16, 2.6, 0.535), new THREE.Vector3(0, 2.64, 0.55), new THREE.Vector3(0.16, 2.6, 0.535)], 0.012, goldMat);
+
+    // Outfits: a snug torso shell, sleeves over the arms and outfit details on the front.
+    const outfit = (id, color) => {
+      const group = this.accessory(id), cloth = mat(color);
+      this.ellipsoid(group, cloth, [0, 1.25, -0.06], [0.69, 0.74, 0.6]);
+      return { group, cloth };
+    };
+    const sleeves = (group, cloth, cuffMat) => {
+      for (const side of [-1, 1]) {
+        this.ellipsoid(group, cloth, [side * 0.66, 1.52, 0.11], [0.26, 0.23, 0.26], [0, 0, side * 0.3]);
+        this.ellipsoid(group, cuffMat, [side * 0.86, 1.45, 0.14], [0.06, 0.17, 0.19], [0, 0, side * 0.3]);
+      }
+    };
+    const suit = outfit('suit', '#1F2A44'), shirtMat = mat('#F4F2EC', { roughness: 0.6 }), shoeMat = mat('#141010', { roughness: 0.2 });
+    this.ellipsoid(suit.group, shirtMat, [0, 1.55, 0.45], [0.2, 0.32, 0.12]);
+    this.ellipsoid(suit.group, scarfMat, [0, 1.42, 0.56], [0.06, 0.24, 0.03]);
+    sleeves(suit.group, suit.cloth, shirtMat);
+    for (const side of [-1, 1]) {
+      this.ellipsoid(suit.group, suit.cloth, [side * 0.43, 0.48, 0.04], [0.3, 0.3, 0.33], [0, 0, side * 0.18]);
+      this.ellipsoid(suit.group, shoeMat, [side * 0.43, 0.1, 0.12], [0.26, 0.11, 0.36]);
+    }
+    const explorer = outfit('explorer', '#C9AE7A'), leatherMat = mat('#5A2E12', { roughness: 0.6 }), binoMat = mat('#26221F', { roughness: 0.4 });
+    // The vest stays open over the cream tummy.
+    explorer.group.children[0].position.z = -0.12;
+    for (const side of [-1, 1]) {
+      this.ellipsoid(explorer.group, mat('#B39760'), [side * 0.36, 1.1, 0.5], [0.13, 0.11, 0.04]);
+      this.ellipsoid(explorer.group, binoMat, [side * 0.07, 1.55, 0.58], [0.06, 0.1, 0.06]);
+    }
+    this.tube(explorer.group, [[-0.55, 1.95, 0.1], [-0.1, 1.5, 0.6], [0.45, 0.95, 0.45], [0.68, 0.9, 0]].map(p => new THREE.Vector3(...p)), 0.03, leatherMat);
+    const hoodie = outfit('hoodie', '#8ED1BC'), ribMat = mat('#6DB9A2');
+    sleeves(hoodie.group, hoodie.cloth, ribMat);
+    this.ellipsoid(hoodie.group, ribMat, [0, 0.95, 0.5], [0.34, 0.17, 0.08]);
+    // The hood is its own group so hats can replace it.
+    this.hood = new THREE.Group(); this.hood.name = 'ProceduralHood'; hoodie.group.add(this.hood);
+    this.ellipsoid(this.hood, hoodie.cloth, [0, 2.28, -0.14], [0.71, 0.76, 0.58]);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.07, 10, 40), ribMat);
+    rim.position.set(0, 2.3, 0.36); rim.scale.set(1, 1.12, 1); this.hood.add(rim);
     this.setCosmetics({});
   }
 
@@ -162,7 +199,9 @@ export class ProceduralDinocky3D extends THREE.Group {
   }
   showAccessories(ids) {
     for (const [key, group] of Object.entries(this.accessories)) group.visible = ids.includes(key);
-    if (this.headSpikes) this.headSpikes.visible = !ids.some(id => HATS.includes(id));
+    const hat = ids.some(id => HATS.includes(id));
+    if (this.headSpikes) this.headSpikes.visible = !hat;
+    if (this.hood) this.hood.visible = !hat;
   }
   animate(time, reducedMotion) {
     this.rig.scale.y = reducedMotion ? 1 : 1 + Math.sin(time * 2.6) * 0.012;

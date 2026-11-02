@@ -85,6 +85,8 @@ export class Dinocky3D extends ProceduralDinocky3D {
     scene.traverse(object => { if (object.isMesh) { object.castShadow = true; object.receiveShadow = false; } });
     const fallback = this.accessories[id];
     this.model.add(scene); this.accessories[id] = scene; (this.loadedAccessories ||= new Set()).add(id);
+    // The hoodie's hood is exported as its own node so hats can replace it.
+    if (id === 'hoodie') this.hood = scene.getObjectByName('Accessory_hoodie_hood') || null;
     if (fallback) {
       const retained = new Set();
       for (const other of Object.values(this.accessories)) other.traverse(o => {

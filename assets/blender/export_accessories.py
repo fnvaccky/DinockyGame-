@@ -16,9 +16,17 @@ ACCESSORIES={
     'bee_hat':'HAT | Bee bucket (crochet)',
     'frog_hat':'HAT | Frog bucket (crochet)',
     'glasses':'GLASSES | Round rose-gold',
+    'suit':'SUIT | Navy tuxedo',
+    'explorer':'EXPLORER | Safari vest',
+    'hoodie':'HOODIE | Mint dino',
 }
+# Outfits cover the whole body, so they get a larger size and triangle allowance.
+OUTFITS={'suit','explorer','hoodie'}
+OUTFIT_MAX_BYTES=260*1024
+# Parts exported as their own node so the game can hide them (the hood goes under hats).
+SEPARATE={'hoodie':{'hood':{'Hoodie_Hood','Hoodie_HoodRim'}}}
 # Triangle budget per accessory before the size check tightens it.
-BUDGET={'cap':6000,'scarf':6000,'bee_hat':6000,'frog_hat':7000,'glasses':5000}
+BUDGET={'cap':6000,'scarf':6000,'bee_hat':6000,'frog_hat':7000,'glasses':5000,'suit':11000,'explorer':10000,'hoodie':11000}
 BLENDED={'Glasses_Lens','Glasses_NosePad'}
 STRIPES=38.0  # Crochet_BeeStripes: black where sin(38 * local z) >= 0
 
@@ -88,19 +96,30 @@ def export_accessory(aid,cname,ratio_scale=1.0):
     ratio=min(1.0,BUDGET[aid]/raw)*ratio_scale
     mats={'yellow':plain(bpy.data.materials['Crochet_Yellow']),
           'black':plain(bpy.data.materials['Crochet_BeeStripes'],'Acc • BeeStripes_Black',bpy.data.materials['Crochet_BeeStripes'].node_tree.nodes['Color Ramp'].color_ramp.elements[1].color[:])}
-    parts=[bake(o,dg,ratio,mats) for o in col.objects if o.type in {'MESH','CURVE'}]
+    groups={}
+    for o in col.objects:
+        if o.type not in {'MESH','CURVE'}:continue
+        key=next((k for k,names in SEPARATE.get(aid,{}).items() if o.name in names),None)
+        groups.setdefault(key,[]).append(bake(o,dg,ratio,mats))
     scene.collection.children.unlink(col);col.hide_viewport,col.hide_render=hidden
+    nodes=[]
+    for key,parts in groups.items():
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in parts:o.select_set(True)
+        bpy.context.view_layer.objects.active=parts[0];bpy.ops.object.join()
+        name='Accessory_'+aid+('_'+key if key else '')
+        acc=parts[0];acc.name=name;acc.data.name=name
+        acc['accessory']=aid;acc['front']='+Z after glTF export; Blender -Y'
+        nodes.append(acc)
     bpy.ops.object.select_all(action='DESELECT')
-    for o in parts:o.select_set(True)
-    bpy.context.view_layer.objects.active=parts[0];bpy.ops.object.join()
-    acc=parts[0];acc.name='Accessory_'+aid;acc.data.name='Accessory_'+aid
-    acc['accessory']=aid;acc['front']='+Z after glTF export; Blender -Y'
-    tri=triangles([acc]);path=os.path.join(OUT,aid+'.glb')
+    for o in nodes:o.select_set(True)
+    tri=triangles(nodes);path=os.path.join(OUT,aid+'.glb')
     bpy.ops.export_scene.gltf(filepath=path,export_format='GLB',use_selection=True,use_active_scene=True,
         export_yup=True,export_apply=True,export_extras=True,export_texcoords=False,export_animations=False)
     stats={'triangles':tri,'source_triangles':raw,'decimate_ratio':round(ratio,3),'glb_bytes':os.path.getsize(path),
-           'materials':[m.name for m in acc.data.materials]}
-    me=acc.data;bpy.data.objects.remove(acc);bpy.data.meshes.remove(me);bpy.context.window.scene=source;bpy.data.scenes.remove(scene)
+           'nodes':[o.name for o in nodes],'materials':sorted({m.name for o in nodes for m in o.data.materials})}
+    for acc in nodes:me=acc.data;bpy.data.objects.remove(acc);bpy.data.meshes.remove(me)
+    bpy.context.window.scene=source;bpy.data.scenes.remove(scene)
     return stats
 
 def split_head_spikes():
@@ -148,16 +167,18 @@ os.makedirs(OUT,exist_ok=True)
 split=split_head_spikes()
 character=export_character()
 accessories={}
+# Set ONLY={'suit',...} before running to re-export just those accessories.
 for aid,cname in ACCESSORIES.items():
+    if globals().get('ONLY') and aid not in ONLY:continue
     scale=1.0
     while True:
         accessories[aid]=export_accessory(aid,cname,scale)
-        if accessories[aid]['glb_bytes']<=MAX_BYTES:break
+        if accessories[aid]['glb_bytes']<=(OUTFIT_MAX_BYTES if aid in OUTFITS else MAX_BYTES):break
         scale*=.8
 for m in list(bpy.data.materials):
     if m.get('accessory_export') and not m.users:bpy.data.materials.remove(m)
 report_path=os.path.join(ROOT,'assets','blender','model-report.json')
 with open(report_path) as f:report=json.load(f)
-report.update(character);report['hat_hidden_mesh']='Dinocky_HeadSpikes_Game';report['accessories']=accessories
+report.update(character);report['hat_hidden_mesh']='Dinocky_HeadSpikes_Game';report['accessories']={**report.get('accessories',{}),**accessories}
 with open(report_path,'w') as f:json.dump(report,f,indent=2)
 print(json.dumps({'split':split,'character':character,'accessories':accessories},indent=1))

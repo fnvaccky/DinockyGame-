@@ -63,6 +63,57 @@
         "Acc \u2022 Glasses_Gold",
         "Acc \u2022 Glasses_NosePad"
       ]
+    },
+    "suit": {
+      "triangles": 10983,
+      "source_triangles": 54264,
+      "decimate_ratio": 0.203,
+      "glb_bytes": 212604,
+      "nodes": [
+        "Accessory_suit"
+      ],
+      "materials": [
+        "Acc \u2022 Cosmetic_Scarf_Red",
+        "Acc \u2022 Suit_Button",
+        "Acc \u2022 Suit_Lapel_Satin",
+        "Acc \u2022 Suit_Navy",
+        "Acc \u2022 Suit_Shirt_White",
+        "Acc \u2022 Suit_Shoe_Leather",
+        "Acc \u2022 Suit_Shoe_Sole"
+      ]
+    },
+    "explorer": {
+      "triangles": 9956,
+      "source_triangles": 25056,
+      "decimate_ratio": 0.399,
+      "glb_bytes": 252648,
+      "nodes": [
+        "Accessory_explorer"
+      ],
+      "materials": [
+        "Acc \u2022 Explorer_BinoBlack",
+        "Acc \u2022 Explorer_BinoGlass",
+        "Acc \u2022 Explorer_Brass",
+        "Acc \u2022 Explorer_Khaki",
+        "Acc \u2022 Explorer_KhakiDark",
+        "Acc \u2022 Explorer_Leather"
+      ]
+    },
+    "hoodie": {
+      "triangles": 10988,
+      "source_triangles": 43032,
+      "decimate_ratio": 0.256,
+      "glb_bytes": 204096,
+      "nodes": [
+        "Accessory_hoodie",
+        "Accessory_hoodie_hood"
+      ],
+      "materials": [
+        "Acc \u2022 Hoodie_Aglet",
+        "Acc \u2022 Hoodie_Mint",
+        "Acc \u2022 Hoodie_MintRib",
+        "Acc \u2022 Hoodie_String"
+      ]
     }
   }
 }

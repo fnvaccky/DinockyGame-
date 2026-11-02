@@ -94,8 +94,21 @@ test('new accessories match the client catalog and stack one per slot', async ()
     snapshot = await rpc(db, 'unequip_cosmetic', ['glasses']);
     assert.deepEqual([snapshot.profile.equipped_hat, snapshot.profile.equipped_neck, snapshot.profile.equipped_face], ['cap', 'scarf', null]);
     assert.ok(!('equipped_accessory' in snapshot.profile));
+    // Outfits take the body slot under everything else; a second outfit replaces the first.
+    const slots = (await db.query("select id, slot from public.cosmetics where kind = 'accessory' order by id")).rows;
+    assert.deepEqual(slots, CATALOG.filter(item => item.kind === 'accessory').map(({ id, slot }) => ({ id, slot })).sort((a, b) => a.id.localeCompare(b.id)));
+    await db.exec('reset role'); await db.query('update public.profiles set coins = 600 where user_id = $1', [USER_A]); await asUser(db, USER_A);
+    await rpc(db, 'purchase_cosmetic', ['suit']); snapshot = await rpc(db, 'purchase_cosmetic', ['hoodie']);
+    assert.equal(snapshot.profile.coins, 50);
+    snapshot = await rpc(db, 'equip_cosmetic', ['suit']);
+    assert.deepEqual([snapshot.profile.equipped_body, snapshot.profile.equipped_hat, snapshot.profile.equipped_neck], ['suit', 'cap', 'scarf']);
+    snapshot = await rpc(db, 'equip_cosmetic', ['hoodie']);
+    assert.equal(snapshot.profile.equipped_body, 'hoodie');
+    snapshot = await rpc(db, 'unequip_cosmetic', ['hoodie']);
+    assert.deepEqual([snapshot.profile.equipped_body, snapshot.profile.equipped_hat], [null, 'cap']);
+    await rpc(db, 'equip_cosmetic', ['suit']);
     snapshot = await rpc(db, 'equip_cosmetic', [null]);
-    assert.deepEqual([snapshot.profile.equipped_hat, snapshot.profile.equipped_neck, snapshot.profile.equipped_face], [null, null, null]);
+    assert.deepEqual([snapshot.profile.equipped_hat, snapshot.profile.equipped_neck, snapshot.profile.equipped_face, snapshot.profile.equipped_body], [null, null, null, null]);
     await db.exec('reset role; set role anon');
     await assert.rejects(rpc(db, 'unequip_cosmetic', ['cap']), /permission denied/);
   } finally { await db.close(); }

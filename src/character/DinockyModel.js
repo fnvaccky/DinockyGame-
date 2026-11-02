@@ -11,7 +11,7 @@
  * - Articulated jaw that opens wide for the CHOMP / Eat-Enemy attack
  * - Power-up visual auras: Pizza (Fire/Cheese), Donut (Sugar/Sprinkles/Phase), Burger (Heavy)
  */
-import { palette, normalizeCosmetics, HATS } from '../cosmetics.js';
+import { palette, normalizeCosmetics, HATS, OUTFITS } from '../cosmetics.js';
 
 export class DinockyModel {
   constructor() {
@@ -216,7 +216,9 @@ export class DinockyModel {
 
     // --- 2. Yellow Dorsal Spikes (Behind body & spine) ---
     const { accessories } = normalizeCosmetics(this.cosmetics);
-    this._drawSpikes(ctx, colors, !isGhost && accessories.some(id => HATS.includes(id)));
+    const hat = !isGhost && accessories.some(id => HATS.includes(id));
+    const outfit = isGhost ? null : accessories.find(id => OUTFITS.includes(id));
+    this._drawSpikes(ctx, colors, hat);
 
     // --- 3. Left / Back Leg ---
     this._drawLeg(ctx, colors, -7, 20, legL_Angle, true);
@@ -227,8 +229,14 @@ export class DinockyModel {
     // --- 5. Cream Belly Patch ---
     this._drawBelly(ctx, colors);
 
+    // --- 5b. Hoodie hood frames the face; it stays off under a hat ---
+    if (outfit === 'hoodie' && !hat) this._drawHood(ctx);
+
     // --- 6. Cute Face: Eyes, Nostrils, Spiral Cheeks ---
     this._drawFace(ctx, colors);
+
+    // --- 6b. Outfit body sits under the mouth so a chomp stays visible ---
+    if (outfit) this._drawOutfitBody(ctx, outfit);
 
     // --- 7. Mouth & Scalloped Teeth (Chomp / Eat Mechanics) ---
     this._drawMouth(ctx, colors);
@@ -238,9 +246,10 @@ export class DinockyModel {
 
     // --- 9. Stubby Dinosaur Arm ---
     this._drawArm(ctx, colors, armAngle);
+    if (outfit) this._drawOutfitLimbs(ctx, outfit, { armAngle, legL_Angle, legR_Angle });
 
     // --- 10. Accessories: scarf, then glasses, then hat on top ---
-    if (!isGhost) for (const id of accessories) this._drawAccessory(ctx, id);
+    if (!isGhost) for (const id of accessories) if (id !== outfit) this._drawAccessory(ctx, id);
 
     ctx.restore();
   }
@@ -255,6 +264,91 @@ export class DinockyModel {
     else if (id === 'bee_hat') this._drawBucketHat(ctx, 'bee');
     else if (id === 'frog_hat') this._drawBucketHat(ctx, 'frog');
     else if (id === 'glasses') this._drawGlasses(ctx);
+    ctx.restore();
+  }
+
+  /**
+   * Outfits: clothing is clipped to the body outline below the jaw.
+   */
+  _drawOutfitBody(ctx, id) {
+    ctx.save();
+    ctx.clip(this._bodyPath());
+    ctx.fillStyle = { suit: '#1F2A44', explorer: '#C9AE7A', hoodie: '#8ED1BC' }[id];
+    ctx.beginPath(); ctx.moveTo(-24, 4); ctx.quadraticCurveTo(4, 1, 24, 3); ctx.lineTo(24, 30); ctx.lineTo(-24, 30); ctx.fill();
+    if (id === 'suit') {
+      // White shirt front, red tie, satin lapel, buttons and a pocket square
+      ctx.fillStyle = '#F4F2EC';
+      ctx.beginPath(); ctx.moveTo(8, 3); ctx.lineTo(20, 3); ctx.lineTo(16, 15); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#C62828';
+      ctx.beginPath(); ctx.moveTo(12.5, 4); ctx.lineTo(15.5, 4); ctx.lineTo(15, 12); ctx.lineTo(13.5, 14); ctx.lineTo(12.5, 12); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#0E1424'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(8, 3); ctx.lineTo(15.5, 16); ctx.stroke();
+      ctx.fillStyle = '#0E1424';
+      for (const y of [17, 21]) { ctx.beginPath(); ctx.arc(15, y, 1, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = '#E53935';
+      ctx.beginPath(); ctx.moveTo(1, 9); ctx.lineTo(3, 6.5); ctx.lineTo(5, 9); ctx.closePath(); ctx.fill();
+    } else if (id === 'explorer') {
+      // Open vest over the cream tummy, pockets with brass snaps, satchel strap
+      ctx.fillStyle = '#FFFDF5';
+      ctx.beginPath(); ctx.ellipse(13, 10, 5, 11, 0.15, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#8E7343'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.ellipse(13, 10, 5, 11, 0.15, 0.55 * Math.PI, 1.45 * Math.PI); ctx.stroke();
+      for (const [x, y] of [[0, 8], [-1, 16]]) {
+        ctx.fillStyle = '#B39760'; ctx.fillRect(x, y, 6, 5);
+        ctx.fillStyle = '#8E7343'; ctx.fillRect(x, y, 6, 1.6);
+        ctx.fillStyle = '#E0B050'; ctx.beginPath(); ctx.arc(x + 3, y + 1.5, 0.8, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.strokeStyle = '#5A2E12'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(-14, 2); ctx.lineTo(18, 18); ctx.stroke();
+    } else {
+      // Hoodie: ribbed hem, kangaroo pocket and drawstrings
+      ctx.fillStyle = '#6DB9A2'; ctx.fillRect(-24, 20, 48, 4);
+      ctx.beginPath(); ctx.roundRect(1, 11, 15, 7, 2); ctx.fill();
+      ctx.strokeStyle = '#F4F1E8'; ctx.lineWidth = 1;
+      for (const x of [11, 14]) { ctx.beginPath(); ctx.moveTo(x, 3); ctx.lineTo(x + 0.5, 9); ctx.stroke(); }
+      ctx.fillStyle = '#C49A3A';
+      for (const x of [11.5, 14.5]) ctx.fillRect(x - 0.6, 9, 1.2, 1.8);
+    }
+    ctx.restore();
+    if (id === 'explorer') {
+      // Binoculars hang on the chest
+      ctx.fillStyle = '#26221F';
+      for (const x of [11.5, 15]) { ctx.beginPath(); ctx.roundRect(x, 5, 3, 5, 1); ctx.fill(); }
+      ctx.fillStyle = '#4D7A99';
+      for (const x of [11.5, 15]) ctx.fillRect(x + 0.5, 9.2, 2, 0.8);
+    }
+  }
+
+  _drawOutfitLimbs(ctx, id, { armAngle, legL_Angle, legR_Angle }) {
+    if (id === 'suit') {
+      // Polished shoes over both feet
+      for (const [x, angle, color] of [[-7, legL_Angle, '#2A2422'], [6, legR_Angle, '#141010']]) {
+        ctx.save(); ctx.translate(x, 20); ctx.rotate(angle);
+        ctx.fillStyle = color; ctx.beginPath(); ctx.ellipse(2, 7, 7.5, 3.6, 0.1, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)'; ctx.beginPath(); ctx.ellipse(5, 5.6, 2.2, 0.8, 0.1, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    }
+    if (id === 'explorer') return;
+    // Sleeve over the arm with a contrasting cuff
+    ctx.save();
+    ctx.translate(6, 4); ctx.rotate(armAngle);
+    if (this.chompProgress > 0.3) ctx.rotate(-0.5 * this.chompProgress);
+    ctx.fillStyle = id === 'suit' ? '#1F2A44' : '#8ED1BC';
+    ctx.beginPath(); ctx.ellipse(2, 2.5, 5, 3.8, 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = id === 'suit' ? '#F4F2EC' : '#6DB9A2';
+    ctx.beginPath(); ctx.ellipse(6, 4.3, 1.4, 3, 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  _drawHood(ctx) {
+    // The hood wraps the back of the head; its rim curves down behind the cheek.
+    ctx.save();
+    ctx.clip(this._bodyPath());
+    ctx.fillStyle = '#8ED1BC';
+    ctx.beginPath(); ctx.moveTo(4, -30); ctx.quadraticCurveTo(-6, -12, -1, 6); ctx.lineTo(-24, 6); ctx.lineTo(-24, -30); ctx.fill();
+    ctx.strokeStyle = '#6DB9A2'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(3.5, -27); ctx.quadraticCurveTo(-5, -12, -1, 4); ctx.stroke();
     ctx.restore();
   }
 
@@ -418,32 +512,36 @@ export class DinockyModel {
     ctx.save();
 
     // Base body contour
-    ctx.beginPath();
-    // Top of head
-    ctx.moveTo(2, -26);
-    // Forehead curving into friendly chubby snout
-    ctx.bezierCurveTo(14, -26, 20, -18, 20, -8);
-    // Lower snout / cheek contour
-    ctx.bezierCurveTo(20, 0, 18, 8, 16, 16);
-    // Lower body / bottom curve
-    ctx.bezierCurveTo(14, 24, -10, 25, -16, 16);
-    // Back curve up to neck
-    ctx.bezierCurveTo(-20, 6, -18, -12, -14, -20);
-    // Crown curve
-    ctx.quadraticCurveTo(-6, -26, 2, -26);
-    ctx.closePath();
-
+    const body = this._bodyPath();
     ctx.fillStyle = colors.body;
-    ctx.fill();
+    ctx.fill(body);
 
     // Subtle 3D shadow gradient on the back
     const grad = ctx.createLinearGradient(-18, 0, 16, 0);
     grad.addColorStop(0, 'rgba(190, 60, 80, 0.25)');
     grad.addColorStop(0.5, 'rgba(190, 60, 80, 0)');
     ctx.fillStyle = grad;
-    ctx.fill();
+    ctx.fill(body);
 
     ctx.restore();
+  }
+
+  _bodyPath() {
+    const path = new Path2D();
+    // Top of head
+    path.moveTo(2, -26);
+    // Forehead curving into friendly chubby snout
+    path.bezierCurveTo(14, -26, 20, -18, 20, -8);
+    // Lower snout / cheek contour
+    path.bezierCurveTo(20, 0, 18, 8, 16, 16);
+    // Lower body / bottom curve
+    path.bezierCurveTo(14, 24, -10, 25, -16, 16);
+    // Back curve up to neck
+    path.bezierCurveTo(-20, 6, -18, -12, -14, -20);
+    // Crown curve
+    path.quadraticCurveTo(-6, -26, 2, -26);
+    path.closePath();
+    return path;
   }
 
   /**
