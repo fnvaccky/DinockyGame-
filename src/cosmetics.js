@@ -4,9 +4,13 @@ export const CATALOG = Object.freeze([
   { id: 'lavender', name: 'Berry Dream', kind: 'color', price: 75, color: '#B79AE0', dark: '#8E70BD', light: '#D3BBF3', description: 'A little sprinkle of daydream.' },
   { id: 'sky', name: 'Blueberry Sky', kind: 'color', price: 100, color: '#87C7E1', dark: '#4C9FC4', light: '#B4E6F4', description: 'Cloud nine, here we come.' },
   { id: 'cap', name: 'Explorer Cap', kind: 'accessory', price: 150, color: '#E8BC70', description: 'For very important snack expeditions.' },
-  { id: 'scarf', name: 'Berry Scarf', kind: 'accessory', price: 150, color: '#BD4262', description: 'Cozy enough for one more adventure.' }
+  { id: 'scarf', name: 'Cozy Red Scarf', kind: 'accessory', price: 150, color: '#C62828', description: 'A warm red knit with tails that wave hello.' },
+  { id: 'bee_hat', name: 'Bumble Bucket', kind: 'accessory', price: 200, color: '#F4B400', description: 'Buzzy stripes and two tiny wings. Bzz!' },
+  { id: 'frog_hat', name: 'Froggy Bucket', kind: 'accessory', price: 200, color: '#7CC24A', description: 'Two big froggy eyes keep watch for snacks.' },
+  { id: 'glasses', name: 'Rosy Specs', kind: 'accessory', price: 125, color: '#E8A0A8', description: 'Round rose-gold specs for spotting treats.' }
 ]);
+export const HATS = Object.freeze(['cap', 'bee_hat', 'frog_hat']);
 export function palette(id = 'pink') { return CATALOG.find(item => item.id === id && item.kind === 'color') || CATALOG[0]; }
 export function normalizeCosmetics(value = {}) {
-  return { color: palette(value.color).id, accessory: ['cap', 'scarf'].includes(value.accessory) ? value.accessory : null };
+  return { color: palette(value.color).id, accessory: CATALOG.some(item => item.kind === 'accessory' && item.id === value.accessory) ? value.accessory : null };
 }

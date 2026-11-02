@@ -4,6 +4,7 @@ import { events } from '../core/Events.js';
 import { Player } from '../character/Player.js';
 import { Physics } from '../physics/Physics.js';
 import { Level1 } from '../levels/Level1.js';
+import { createLevel } from '../levels/LevelRegistry.js';
 import { normalizeCosmetics } from '../cosmetics.js';
 
 export class GameSession {
@@ -19,8 +20,10 @@ export class GameSession {
       events.on('levelCompleted', data => { if (this.running) this.score += data.bonus; })
     ];
   }
-  start(runId, cosmetics) {
-    this.stop(); this.runId = runId; this.level = new Level1(); this.player = new Player(80, 480);
+  start(runId, cosmetics, levelId = '1-1') {
+    this.stop(); this.runId = runId; this.levelId = levelId || '1-1';
+    this.level = createLevel(this.levelId);
+    this.player = new Player(this.level.spawn?.x || 80, this.level.spawn?.y || 480);
     this.score = 0; this.eaten = 0; this.result = null; this.applyCosmetics(cosmetics); this.resume();
   }
   applyCosmetics(value) { this.cosmetics = normalizeCosmetics(value); if (this.player) this.player.model.cosmetics = this.cosmetics; }
@@ -37,9 +40,18 @@ export class GameSession {
     if (grounded && !this.player.isGrounded && this.player.vy < 0) events.emit('jump', {});
     if (!chomping && this.player.isChomping) events.emit('chomp', {});
     this.level.update(dt, this.player); this.input.update();
-    this.callbacks.onUpdate?.({ score: this.score, health: this.level.health, time: Math.ceil(this.level.timeLeft), power: this.player.powerManager.activePower, powerTime: Math.ceil(this.player.powerManager.powerTimer) });
+    this.callbacks.onUpdate?.({
+      score: this.score,
+      health: this.level.health,
+      time: Math.ceil(this.level.timeLeft),
+      power: this.player.powerManager.activePower,
+      powerTime: Math.ceil(this.player.powerManager.powerTimer),
+      levelId: this.levelId,
+      levelName: this.level.name,
+      levelTitle: this.level.title || this.level.name
+    });
     if (['won', 'lost'].includes(this.level.status)) {
-      this.result = { runId: this.runId, levelId: '1-1', score: this.score,
+      this.result = { runId: this.runId, levelId: this.levelId || '1-1', score: this.score,
         elapsed: Math.round((240 - this.level.timeLeft) * 1000) / 1000, completed: this.level.status === 'won' };
       this.stop(); this.callbacks.onResult?.(this.result);
     }

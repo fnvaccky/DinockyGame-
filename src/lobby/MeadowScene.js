@@ -27,19 +27,34 @@ export class MeadowScene {
         this.host.dataset.model = loaded ? 'plush' : 'procedural-fallback';
         this.draw();
       });
+      this.model.accessoriesReady.then(ids => {
+        if (this.abort.signal.aborted || !this.renderer) return;
+        this.host.dataset.accessories = ids.join(' ');
+        this.draw();
+      });
       this.buildMeadow();
       this.canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.showFallback(); }, { signal: this.abort.signal });
     } catch { this.showFallback(); }
     this.canvas.setAttribute('aria-label', this.renderer ? 'Dinocky in Snack Meadow. Drag to turn him around.' : 'Dinocky in Snack Meadow, 2D preview.');
     this.canvas.setAttribute('role', 'img');
     this.canvas.addEventListener('pointerdown', e => {
-      this.pointer = { id: e.pointerId, x: e.clientX }; this.canvas.setPointerCapture(e.pointerId); this.dragUntil = Infinity;
+      this.pointer = { id: e.pointerId, x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY };
+      this.canvas.setPointerCapture(e.pointerId);
+      this.dragUntil = Infinity;
     }, { signal: this.abort.signal });
     this.canvas.addEventListener('pointermove', e => {
       if (this.pointer?.id !== e.pointerId) return;
-      this.angle += (e.clientX - this.pointer.x) * 0.009; this.pointer.x = e.clientX;
+      this.angle += (e.clientX - this.pointer.x) * 0.009;
+      this.pointer.x = e.clientX;
+      this.pointer.y = e.clientY;
     }, { signal: this.abort.signal });
-    const release = () => { this.pointer = null; this.dragUntil = this.time + 3; };
+    const release = e => {
+      if (this.pointer && Math.hypot(e.clientX - this.pointer.startX, e.clientY - this.pointer.startY) < 7) {
+        this.cheer();
+      }
+      this.pointer = null;
+      this.dragUntil = this.time + 3;
+    };
     this.canvas.addEventListener('pointerup', release, { signal: this.abort.signal });
     this.canvas.addEventListener('pointercancel', release, { signal: this.abort.signal });
     this.observer = new ResizeObserver(() => this.resize()); this.observer.observe(host); this.resize();
@@ -119,9 +134,21 @@ export class MeadowScene {
   }
   setCosmetics(value) { this.cosmetics = value; this.model?.setCosmetics(value); if (this.fallback) this.fallback.cosmetics = value; }
   setReducedMotion(value) { this.reducedMotion = value; }
+  cheer() {
+    this.cheerUntil = this.time + 0.65;
+  }
   draw() {
     if (this.renderer) {
-      this.model.rotation.y = this.angle; this.model.animate(this.time, this.reducedMotion);
+      this.model.rotation.y = this.angle;
+      if (this.cheerUntil && this.time < this.cheerUntil && !this.reducedMotion) {
+        const progress = 1 - (this.cheerUntil - this.time) / 0.65;
+        this.model.position.y = 0.15 + Math.sin(progress * Math.PI) * 0.45;
+        this.model.rotation.z = Math.sin(progress * Math.PI * 2) * 0.12;
+      } else {
+        this.model.position.y = 0.15;
+        this.model.rotation.z = 0;
+      }
+      this.model.animate(this.time, this.reducedMotion);
       if (!this.reducedMotion) for (const item of this.ambient) {
         const t = this.time + item.offset;
         if (item.kind === 'cloud') item.object.position.x = (innerWidth < 650 && item.x > 0 ? 1.5 : item.x) + Math.sin(t * 0.18) * 0.25;

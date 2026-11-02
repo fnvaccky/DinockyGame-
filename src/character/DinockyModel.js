@@ -11,7 +11,7 @@
  * - Articulated jaw that opens wide for the CHOMP / Eat-Enemy attack
  * - Power-up visual auras: Pizza (Fire/Cheese), Donut (Sugar/Sprinkles/Phase), Burger (Heavy)
  */
-import { palette, normalizeCosmetics } from '../cosmetics.js';
+import { palette, normalizeCosmetics, HATS } from '../cosmetics.js';
 
 export class DinockyModel {
   constructor() {
@@ -215,7 +215,7 @@ export class DinockyModel {
     this._drawTail(ctx, colors, tailAngle);
 
     // --- 2. Yellow Dorsal Spikes (Behind body & spine) ---
-    this._drawSpikes(ctx, colors);
+    this._drawSpikes(ctx, colors, !isGhost && HATS.includes(this.cosmetics.accessory));
 
     // --- 3. Left / Back Leg ---
     this._drawLeg(ctx, colors, -7, 20, legL_Angle, true);
@@ -238,19 +238,125 @@ export class DinockyModel {
     // --- 9. Stubby Dinosaur Arm ---
     this._drawArm(ctx, colors, armAngle);
 
-    if (!isGhost && this.cosmetics.accessory === 'cap') {
-      ctx.fillStyle = '#D8AE69';
-      ctx.beginPath(); ctx.ellipse(0, -26, 15, 6, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(1, -30, 11, 8, 0, Math.PI, 0); ctx.fill();
-      ctx.fillStyle = '#FBBF24'; ctx.fillRect(4, -34, 4, 4);
-    }
-    if (!isGhost && this.cosmetics.accessory === 'scarf') {
-      ctx.fillStyle = '#BD4262';
-      ctx.beginPath(); ctx.ellipse(0, 1, 18, 4, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillRect(7, 1, 6, 17);
-    }
+    // --- 10. Accessory (one slot) ---
+    if (!isGhost && this.cosmetics.accessory) this._drawAccessory(ctx, this.cosmetics.accessory);
 
     ctx.restore();
+  }
+
+  /**
+   * Shop accessories, drawn in the side-on sprite frame (facing +x, head top near y = -26).
+   */
+  _drawAccessory(ctx, id) {
+    ctx.save();
+    if (id === 'cap') this._drawCap(ctx);
+    else if (id === 'scarf') this._drawScarf(ctx);
+    else if (id === 'bee_hat') this._drawBucketHat(ctx, 'bee');
+    else if (id === 'frog_hat') this._drawBucketHat(ctx, 'frog');
+    else if (id === 'glasses') this._drawGlasses(ctx);
+    ctx.restore();
+  }
+
+  _drawCap(ctx) {
+    // Tilted back so the brim lifts off the brow.
+    ctx.translate(1, -27);
+    ctx.rotate(-0.32);
+    ctx.fillStyle = '#DEB87A';
+    ctx.beginPath(); ctx.ellipse(0, -2, 11, 9, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#6A3818'; ctx.fillRect(-11, -4.5, 22, 3);
+    ctx.fillStyle = '#E8C489';
+    ctx.beginPath(); ctx.ellipse(1, -1, 16, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(106, 56, 24, 0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(1, -1, 16, 3.5, 0, 0.05 * Math.PI, 0.95 * Math.PI); ctx.stroke();
+    ctx.fillStyle = '#FBBF24';
+    ctx.beginPath(); ctx.arc(7, -3, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -11.5, 1.5, 0, Math.PI * 2); ctx.fill();
+  }
+
+  _drawScarf(ctx) {
+    const sway = Math.sin(this.timer * 4) * 1.2;
+    // Neck sits just under the jaw.
+    ctx.translate(0, 9);
+    const tail =(x0, x1, length, width, color) => {
+      const y0 = 3, y1 = y0 + length;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x0 - width / 2, y0);
+      ctx.lineTo(x0 + width / 2, y0);
+      ctx.quadraticCurveTo(x1 + width / 2 + 1, (y0 + y1) / 2, x1 + width / 2, y1);
+      ctx.lineTo(x1 - width / 2, y1);
+      ctx.quadraticCurveTo(x1 - width / 2 - 1, (y0 + y1) / 2, x0 - width / 2, y0);
+      ctx.fill();
+      // Knitted fringe
+      ctx.strokeStyle = '#E25555'; ctx.lineWidth = 1.2;
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath(); ctx.moveTo(x1 + i * width / 3, y1); ctx.lineTo(x1 + i * width / 3 + sway * 0.5, y1 + 3); ctx.stroke();
+      }
+    };
+    tail(13, 16 + sway, 9, 4.5, '#9E1B1B');
+    ctx.fillStyle = '#C62828';
+    ctx.beginPath(); ctx.ellipse(0, 1, 18, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(120, 15, 20, 0.45)'; ctx.lineWidth = 1;
+    for (const x of [-10, -4, 2, 8]) { ctx.beginPath(); ctx.moveTo(x, -2.5); ctx.lineTo(x + 1, 4.5); ctx.stroke(); }
+    tail(10, 11.5 + sway, 11, 5, '#C62828');
+    ctx.fillStyle = '#B02020';
+    ctx.beginPath(); ctx.arc(11, 2.5, 3.5, 0, Math.PI * 2); ctx.fill();
+  }
+
+  _drawBucketHat(ctx, kind) {
+    const isBee = kind === 'bee';
+    const main = isBee ? '#F4B400' : '#7CC24A', shade = isBee ? '#C98F00' : '#5A9A34';
+    ctx.translate(1, -26);
+    ctx.rotate(-0.12);
+    // Crown: rounded bucket shape
+    const crown = new Path2D();
+    crown.moveTo(-11, 0);
+    crown.lineTo(-9, -10);
+    crown.quadraticCurveTo(0, -15, 9, -10);
+    crown.lineTo(11, 0);
+    crown.closePath();
+    ctx.fillStyle = main; ctx.fill(crown);
+    if (isBee) {
+      ctx.save(); ctx.clip(crown);
+      ctx.fillStyle = '#1C1A17';
+      ctx.fillRect(-12, -5.5, 24, 2.5);
+      ctx.fillRect(-12, -10.5, 24, 2.5);
+      ctx.restore();
+      // Little white wings on top
+      ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#BDBAB0'; ctx.lineWidth = 1;
+      for (const [x, angle] of [[-3.5, -0.55], [1.5, 0.35]]) {
+        ctx.beginPath(); ctx.ellipse(x, -14.5, 2.6, 4, angle, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+    } else {
+      // Two big froggy eyes
+      for (const [x, r] of [[-4, 4.8], [5, 5.4]]) {
+        ctx.fillStyle = main;
+        ctx.beginPath(); ctx.arc(x, -13, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#171113';
+        ctx.beginPath(); ctx.arc(x + 1, -13.5, r * 0.6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath(); ctx.arc(x + 2, -15, r * 0.22, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#EE8FB0';
+      ctx.beginPath(); ctx.ellipse(8, -4, 2, 1.2, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    // Floppy brim
+    ctx.fillStyle = main;
+    ctx.beginPath(); ctx.ellipse(0, 0, 16, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = shade; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.ellipse(0, 0, 16, 4, 0, 0.05 * Math.PI, 0.95 * Math.PI); ctx.stroke();
+  }
+
+  _drawGlasses(ctx) {
+    // Side view: one round lens over the eye, the bridge peeking toward the snout.
+    ctx.strokeStyle = '#E0708A'; ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(13.3, -15.5); ctx.quadraticCurveTo(15, -17.5, 16.5, -16); ctx.stroke();
+    ctx.lineWidth = 2.1;
+    ctx.beginPath(); ctx.arc(8, -14, 5.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    // Temple arm back toward the ear
+    ctx.strokeStyle = '#D9A877'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(2.6, -14.5); ctx.lineTo(-8, -16); ctx.stroke();
   }
 
   /**
@@ -284,7 +390,7 @@ export class DinockyModel {
   /**
    * Draw the yellow dorsal ridges / spikes along the back
    */
-  _drawSpikes(ctx, colors) {
+  _drawSpikes(ctx, colors, underHat = false) {
     ctx.save();
     ctx.fillStyle = colors.spikes;
 
@@ -296,7 +402,7 @@ export class DinockyModel {
       { x: -19, y: 4, r: 5.5 }    // Lower back spike
     ];
 
-    for (const s of spikes) {
+    for (const s of underHat ? spikes.slice(1) : spikes) {
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();

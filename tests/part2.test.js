@@ -217,3 +217,39 @@ test('audio gracefully works without browser AudioContext and cleans up subscrip
   assert.equal(sound.muted, true);
   sound.dispose();
 });
+
+test('Level 2 and Level 3 provide rich worlds, new enemies, jelly pads and star treats', async () => {
+  const { Level2 } = await import('../src/levels/Level2.js');
+  const { Level3 } = await import('../src/levels/Level3.js');
+  const { BerryBouncer, ChocoCritter, setPatrol } = await import('../src/enemies/VeggieEnemies.js');
+
+  const l2 = new Level2();
+  assert.equal(l2.name, 'World 1-2');
+  assert.equal(l2.width, 4640);
+  assert.ok(l2.bouncePads.length >= 3);
+  assert.ok(l2.treats.length >= 6);
+  assert.ok(l2.enemies.some(e => e instanceof BerryBouncer));
+
+  const l3 = new Level3();
+  assert.equal(l3.name, 'World 1-3');
+  assert.equal(l3.width, 4800);
+  assert.ok(l3.treats.length >= 8);
+  assert.ok(l3.enemies.some(e => e instanceof ChocoCritter));
+
+  // Verify new enemies
+  for (const EnemyType of [BerryBouncer, ChocoCritter]) {
+    const enemy = setPatrol(new EnemyType(100, 100), 80, 220);
+    assert.equal(enemy.isEdible, true);
+    for (let i = 0; i < 300; i++) {
+      enemy.update(dt);
+      assert.ok(enemy.x >= 80 && enemy.x + enemy.w <= 220);
+    }
+  }
+
+  // Verify jelly pad bounce
+  const pad = l2.bouncePads[0];
+  const player = new Player(pad.x + 10, pad.y);
+  player.vy = 200;
+  l2.update(dt, player);
+  assert.ok(player.vy < -600, 'Jelly pad should launch player upward');
+});

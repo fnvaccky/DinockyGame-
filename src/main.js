@@ -8,11 +8,18 @@ import { CATALOG } from './cosmetics.js';
 const $ = id => document.getElementById(id);
 const PANELS = { auth: 'authPanel', lobby: 'lobbyPanel', levels: 'levelsPanel', shop: 'shopPanel', settings: 'settingsPanel', results: 'resultsPanel', game: 'gamePanel' };
 const safeMessage = error => error?.message || 'Something went wrong. Please try again.';
+const ACCESSORY_ICONS = {
+  cap: '<g transform="rotate(-14 24 28)"><path d="M12 28c0-16 24-16 24 0Z"/><path d="M12 25.5h24V28H12Z" fill="#6A3818"/><ellipse cx="25" cy="29" rx="19" ry="4.5"/><circle cx="30" cy="25" r="1.8" fill="#FBBF24"/></g>',
+  scarf: '<path d="M27 21l-2 18h6l3-18Z" fill="#9E1B1B"/><ellipse cx="24" cy="17" rx="17" ry="6"/><path d="M22 20l-3 21h6l2-21Z"/><circle cx="25" cy="20" r="3.5" fill="#B02020"/><path d="M20 41v3M22 41v3M24 41v3M28 39v3M30 39v3" stroke="#E25555"/>',
+  bee_hat: '<ellipse cx="18" cy="11" rx="4" ry="6" transform="rotate(-30 18 11)" fill="#fff"/><ellipse cx="28" cy="11" rx="4" ry="6" transform="rotate(25 28 11)" fill="#fff"/><path d="M11 30l4-16q9-6 18 0l4 16Z"/><path d="M12 26h24l-1-4H13ZM14 19h20l-.7-3H14.7Z" fill="#1C1A17" stroke="none"/><ellipse cx="24" cy="31" rx="19" ry="5"/>',
+  frog_hat: '<path d="M11 30l4-14q9-6 18 0l4 14Z"/><circle cx="17" cy="14" r="6"/><circle cx="31" cy="14" r="6"/><circle cx="17.5" cy="14" r="3.4" fill="#171113" stroke="none"/><circle cx="31.5" cy="14" r="3.4" fill="#171113" stroke="none"/><circle cx="18.6" cy="12.6" r="1.1" fill="#fff" stroke="none"/><circle cx="32.6" cy="12.6" r="1.1" fill="#fff" stroke="none"/><ellipse cx="24" cy="31" rx="19" ry="5"/>',
+  glasses: '<path d="M4 20l5 4M44 20l-5 4M20.5 24q3.5-3 7 0" fill="none" stroke="#D9A877" stroke-width="2"/><circle cx="14" cy="26" r="7.5" fill="#ffffff70" stroke="var(--swatch)" stroke-width="2.6"/><circle cx="34" cy="26" r="7.5" fill="#ffffff70" stroke="var(--swatch)" stroke-width="2.6"/>'
+};
 
 export class App {
   constructor() {
     this.account = new AccountService(); this.queue = new RewardQueue(); this.user = null; this.snapshot = null;
-    this.screen = 'auth'; this.authMode = 'login'; this.sessionVersion = 0;
+    this.screen = 'auth'; this.authMode = 'login'; this.sessionVersion = 0; this.selectedLevel = '1-1';
     this.sound = new SoundEngine();
     this.scene = new MeadowScene($('sceneHost'));
     this.game = new GameSession($('gameCanvas'), {
@@ -64,14 +71,73 @@ export class App {
     this.game.stop(); this.sound.stop(); this.scene.setCosmetics({}); this.recovery = false;
     $('profileName').hidden = true; $('wallet').hidden = true; this.setAuthMode('login'); this.show('auth');
   }
+  getLocalProgress() {
+    if (!this.user?.id) return {};
+    try { return JSON.parse(localStorage.getItem(`dinocky:progress:${this.user.id}`) || '{}'); }
+    catch { return {}; }
+  }
+  saveLocalProgress(levelId, { score, elapsed, completed }) {
+    if (!this.user?.id || !completed) return;
+    try {
+      const all = this.getLocalProgress();
+      const prev = all[levelId] || { clears: 0, best_score: 0, best_time: 999 };
+      all[levelId] = {
+        clears: (prev.clears || 0) + 1,
+        best_score: Math.max(prev.best_score || 0, score),
+        best_time: Math.min(prev.best_time || 999, elapsed)
+      };
+      localStorage.setItem(`dinocky:progress:${this.user.id}`, JSON.stringify(all));
+    } catch {}
+  }
   setSnapshot(snapshot) {
     this.snapshot = snapshot;
     $('coinBalance').textContent = snapshot.profile.coins;
     $('profileName').textContent = snapshot.profile.display_name;
     $('welcomeLine').textContent = `Welcome back, ${snapshot.profile.display_name}. Ready for a little adventure?`;
     $('profileName').hidden = false; $('wallet').hidden = false;
-    const progress = snapshot.progress.find(level => level.level_id === '1-1');
-    $('levelBest').textContent = progress ? `Best: ${progress.best_score} · ${Number(progress.best_time).toFixed(1)}s · ${progress.clears} clears` : 'Your first adventure starts here';
+
+    const local = this.getLocalProgress();
+    const getProg = id => {
+      const remote = snapshot.progress?.find(p => p.level_id === id);
+      const loc = local[id];
+      if (!remote && !loc) return null;
+      return {
+        clears: Math.max(remote?.clears || 0, loc?.clears || 0),
+        best_score: Math.max(remote?.best_score || 0, loc?.best_score || 0),
+        best_time: Math.min(remote?.best_time ? Number(remote.best_time) : 999, loc?.best_time ? Number(loc.best_time) : 999)
+      };
+    };
+
+    const p11 = getProg('1-1');
+    const p12 = getProg('1-2');
+    const p13 = getProg('1-3');
+
+    $('levelBest').textContent = p11 ? `Best: ${p11.best_score} · ${Number(p11.best_time).toFixed(1)}s · ${p11.clears} clears` : 'Your first adventure starts here';
+
+    // 1-2 Sugarberry Grove unlock: unlocked once 1-1 has >= 1 clear
+    const unlocked12 = (p11?.clears || 0) > 0 || (p12?.clears || 0) > 0;
+    const btn12 = $('playLevel12');
+    if (btn12) {
+      btn12.classList.toggle('available', unlocked12);
+      btn12.classList.toggle('locked', !unlocked12);
+      const small12 = $('levelBest12');
+      if (small12) small12.textContent = p12 ? `Best: ${p12.best_score} · ${Number(p12.best_time).toFixed(1)}s · ${p12.clears} clears` : (unlocked12 ? 'Sweet berry branches await' : 'Clear 1–1 to unlock');
+      const icon12 = btn12.querySelector('.level-action-icon');
+      if (icon12) icon12.innerHTML = unlocked12 ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 14 9L7 21Z" fill="currentColor" stroke="none"/></svg>' : '○';
+    }
+
+    // 1-3 Cookie Crumble Cove unlock: unlocked once 1-2 has >= 1 clear
+    const unlocked13 = (p12?.clears || 0) > 0 || (p13?.clears || 0) > 0;
+    const btn13 = $('playLevel13');
+    if (btn13) {
+      btn13.classList.toggle('available', unlocked13);
+      btn13.classList.toggle('locked', !unlocked13);
+      const small13 = $('levelBest13');
+      if (small13) small13.textContent = p13 ? `Best: ${p13.best_score} · ${Number(p13.best_time).toFixed(1)}s · ${p13.clears} clears` : (unlocked13 ? 'Grand World 1 finale!' : 'Clear 1–2 to unlock');
+      const icon13 = btn13.querySelector('.level-action-icon');
+      if (icon13) icon13.innerHTML = unlocked13 ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 14 9L7 21Z" fill="currentColor" stroke="none"/></svg>' : '○';
+    }
+
     this.scene.setCosmetics(this.equipped());
     if (this.screen === 'shop') this.selectItem(this.selectedItem || 'pink');
   }
@@ -102,7 +168,33 @@ export class App {
     $('startOpen').onclick = $('levelsOpen').onclick = () => this.show('levels');
     $('shopOpen').onclick = () => { this.show('shop'); this.selectItem(this.equipped().color); };
     document.querySelectorAll('[data-home]').forEach(button => { button.onclick = () => this.show('lobby'); });
-    $('playLevel').onclick = $('replayLevel').onclick = () => { void this.startLevel(); };
+    $('playLevel').onclick = () => { this.selectedLevel = '1-1'; void this.startLevel('1-1'); };
+    if ($('playLevel12')) {
+      $('playLevel12').onclick = () => {
+        if ($('playLevel12').classList.contains('available')) {
+          this.selectedLevel = '1-2'; void this.startLevel('1-2');
+        } else {
+          this.toast('Clear Snack Meadow (1–1) to unlock Sugarberry Grove!');
+        }
+      };
+    }
+    if ($('playLevel13')) {
+      $('playLevel13').onclick = () => {
+        if ($('playLevel13').classList.contains('available')) {
+          this.selectedLevel = '1-3'; void this.startLevel('1-3');
+        } else {
+          this.toast('Clear Sugarberry Grove (1–2) to unlock Cookie Crumble Cove!');
+        }
+      };
+    }
+    $('replayLevel').onclick = () => { void this.startLevel(this.selectedLevel || '1-1'); };
+    if ($('nextLevel')) {
+      $('nextLevel').onclick = () => {
+        const next = this.selectedLevel === '1-1' ? '1-2' : this.selectedLevel === '1-2' ? '1-3' : '1-1';
+        this.selectedLevel = next;
+        void this.startLevel(next);
+      };
+    }
     $('pauseGame').onclick = () => this.game.pause();
     $('resumeGame').onclick = () => { $('pauseOverlay').hidden = true; this.game.resume(); $('gameCanvas').focus(); };
     $('leaveGame').onclick = () => { void this.abandon(); this.show('lobby'); };
@@ -165,16 +257,17 @@ export class App {
     } catch (error) { this.authMessage(safeMessage(error), true); }
     finally { this.authBusy = false; $('authSubmit').disabled = !this.account.client; }
   }
-  async startLevel() {
+  async startLevel(levelId = this.selectedLevel || '1-1') {
     if (this.starting || !this.user) return;
-    this.starting = true; this.busy(true, 'Packing your snacks…');
+    this.starting = true; this.selectedLevel = levelId; this.busy(true, 'Packing your snacks…');
     const userId = this.user.id;
     try {
       const runId = await this.account.startRun();
       if (this.user?.id !== userId) return;
       $('pauseOverlay').hidden = true; this.show('game');
-      this.updateGameHUD({ health: 3, time: 240, score: 0 });
-      this.game.start(runId, this.equipped()); $('gameCanvas').focus();
+      const levelTitle = levelId === '1-2' ? 'Sugarberry Grove' : levelId === '1-3' ? 'Cookie Crumble Cove' : 'Snack Meadow';
+      this.updateGameHUD({ health: 3, time: 240, score: 0, levelId, levelTitle });
+      this.game.start(runId, this.equipped(), levelId); $('gameCanvas').focus();
     } catch (error) { this.toast(navigator.onLine ? safeMessage(error) : 'Connect to the internet to start an adventure.'); }
     finally { this.starting = false; this.busy(false); }
   }
@@ -182,16 +275,44 @@ export class App {
     $('gameHearts').textContent = '♥'.repeat(value.health) + '♡'.repeat(3 - value.health);
     $('gameHearts').setAttribute('aria-label', `${value.health} of 3 hearts`);
     $('gameTime').textContent = value.time; $('gameScore').textContent = value.score;
-    $('gamePower').textContent = value.power ? `${value.power} · ${value.powerTime}s` : 'Find a snack!';
+    if ($('gameLevelTitle')) $('gameLevelTitle').textContent = value.levelTitle || 'Snack Meadow';
+    if ($('gameLevelNumber')) $('gameLevelNumber').textContent = value.levelId || '1–1';
+    const meter = $('gamePowerMeter'), bar = $('gamePowerBar');
+    if (value.power) {
+      $('gamePower').textContent = `${value.power} · ${value.powerTime}s`;
+      if (meter && bar) {
+        meter.hidden = false;
+        bar.style.width = `${Math.min(100, Math.max(0, (value.powerTime / 15) * 100))}%`;
+        bar.className = `power-bar power-${value.power.toLowerCase()}`;
+      }
+    } else {
+      $('gamePower').textContent = 'Find a snack!';
+      if (meter) meter.hidden = true;
+    }
   }
   async finish(result) {
     if (!this.user) return;
+    this.saveLocalProgress(result.levelId, result);
     this.lastResult = result; this.queue.add(this.user.id, result);
     $('resultsTitle').textContent = result.completed ? 'Sweet success!' : 'Another little try?';
-    $('resultsSubtitle').textContent = result.completed ? 'That was one delicious adventure.' : 'Every great explorer takes a few tumbles.';
+    $('resultsSubtitle').textContent = result.completed
+      ? (result.levelId === '1-3' ? '★ World 1 Champion! All delicious secrets unlocked! ★' : 'That was one delicious adventure.')
+      : 'Every great explorer takes a few tumbles.';
     $('resultScore').textContent = result.score;
-    $('resultBest').textContent = this.snapshot.progress.find(p => p.level_id === '1-1')?.best_score ?? '—';
+    const prog = this.getLocalProgress()[result.levelId] || this.snapshot.progress?.find(p => p.level_id === result.levelId);
+    $('resultBest').textContent = prog?.best_score ?? result.score;
     $('resultCoins').textContent = result.completed ? 'Saving…' : '0';
+
+    const nextBtn = $('nextLevel');
+    if (nextBtn) {
+      if (result.completed && (result.levelId === '1-1' || result.levelId === '1-2')) {
+        nextBtn.hidden = false;
+        nextBtn.textContent = result.levelId === '1-1' ? 'Next: Sugarberry Grove (1–2) →' : 'Next: Cookie Crumble Cove (1–3) →';
+      } else {
+        nextBtn.hidden = true;
+      }
+    }
+
     $('saveStatus').textContent = 'Saving your adventure…'; this.show('results'); await this.syncPending();
   }
   async abandon() {
@@ -224,7 +345,7 @@ export class App {
     for (const item of CATALOG) {
       const button = document.createElement('button'); button.className = 'shop-item'; button.dataset.item = item.id;
       button.style.setProperty('--swatch', item.color); button.setAttribute('aria-pressed', 'false');
-      const art = item.kind === 'color' ? '<span class="swatch" aria-hidden="true"></span>' : item.id === 'cap' ? '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 28c0-23 28-23 28 0H10ZM4 29c0-5 40-5 40 0s-40 8-40 0Z"/></svg>' : '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 10h28v12H10zM26 20h10v23H26zM15 20h9v17h-9z"/></svg>';
+      const art = item.kind === 'color' ? '<span class="swatch" aria-hidden="true"></span>' : `<svg viewBox="0 0 48 48" aria-hidden="true">${ACCESSORY_ICONS[item.id]}</svg>`;
       button.innerHTML = `${art}<strong>${item.name}</strong><small>${item.price ? `${item.price} coins` : 'Yours, always'}</small>`;
       button.onclick = () => this.selectItem(item.id); items.append(button);
     }

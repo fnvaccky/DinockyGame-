@@ -29,12 +29,16 @@ for o in col.objects:
     ob.matrix_world=o.matrix_world.copy();copies.append(ob)
 bpy.context.window.scene=game
 # Combine repeated decorations, keeping the animated facial and limb parts distinct.
-for prefix in ['Dinocky_Spike_','Dinocky_Tooth_','Dinocky_Cheek_']:
-    group=[o for o in list(game.objects) if o.name.startswith(prefix)]
+# The top three head spikes stay separate so the game can hide them under hats.
+HEAD_SPIKES=['Dinocky_Spike_0%d_Game'%i for i in range(3)]
+for name,match in [('Dinocky_HeadSpikes_Game',lambda n:n in HEAD_SPIKES)]+[
+        (prefix.rstrip('_')+'s_Game',lambda n,p=prefix:n.startswith(p) and n not in HEAD_SPIKES)
+        for prefix in ['Dinocky_Spike_','Dinocky_Tooth_','Dinocky_Cheek_']]:
+    group=[o for o in list(game.objects) if match(o.name)]
     bpy.ops.object.select_all(action='DESELECT')
     for o in group:o.select_set(True)
     bpy.context.view_layer.objects.active=group[0];bpy.ops.object.join()
-    group[0].name=prefix.rstrip('_')+'s_Game'
+    group[0].name=name
 
 for o in list(game.objects):
     if o.type!='MESH':continue

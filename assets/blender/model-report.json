@@ -1,10 +1,68 @@
 {
   "triangles": 27098,
   "vertices": 14316,
-  "meshes": 11,
+  "meshes": 12,
   "symmetry_error": 5.960464477539063e-08,
-  "glb_bytes": 607416,
+  "glb_bytes": 608332,
   "rigged": false,
   "front": "glTF +Z",
-  "up": "glTF +Y"
+  "up": "glTF +Y",
+  "hat_hidden_mesh": "Dinocky_HeadSpikes_Game",
+  "accessories": {
+    "cap": {
+      "triangles": 5996,
+      "source_triangles": 95744,
+      "decimate_ratio": 0.063,
+      "glb_bytes": 111004,
+      "materials": [
+        "Acc \u2022 Cosmetic_Cap",
+        "Acc \u2022 Cosmetic_LeatherBand",
+        "Acc \u2022 Cosmetic_BadgeGold"
+      ]
+    },
+    "scarf": {
+      "triangles": 5988,
+      "source_triangles": 43024,
+      "decimate_ratio": 0.139,
+      "glb_bytes": 109832,
+      "materials": [
+        "Acc \u2022 Cosmetic_Scarf_Red"
+      ]
+    },
+    "bee_hat": {
+      "triangles": 6608,
+      "source_triangles": 93568,
+      "decimate_ratio": 0.051,
+      "glb_bytes": 143768,
+      "materials": [
+        "Acc \u2022 Crochet_Yellow",
+        "Acc \u2022 BeeStripes_Black",
+        "Acc \u2022 Crochet_White"
+      ]
+    },
+    "frog_hat": {
+      "triangles": 6994,
+      "source_triangles": 125472,
+      "decimate_ratio": 0.056,
+      "glb_bytes": 130052,
+      "materials": [
+        "Acc \u2022 Crochet_Green",
+        "Acc \u2022 Crochet_Black",
+        "Acc \u2022 Frog_EyeShine",
+        "Acc \u2022 Crochet_Pink"
+      ]
+    },
+    "glasses": {
+      "triangles": 4994,
+      "source_triangles": 7468,
+      "decimate_ratio": 0.67,
+      "glb_bytes": 97564,
+      "materials": [
+        "Acc \u2022 Glasses_RoseFrame",
+        "Acc \u2022 Glasses_Lens",
+        "Acc \u2022 Glasses_Gold",
+        "Acc \u2022 Glasses_NosePad"
+      ]
+    }
+  }
 }

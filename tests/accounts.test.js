@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDatabase, asUser, rpc, ageRun, USER_A, USER_B } from './database-fixture.js';
+import { CATALOG } from '../src/cosmetics.js';
 
 test('database account isolation, reward integrity, and atomic inventory operations', async t => {
   const db = await createDatabase();
@@ -60,5 +61,29 @@ test('database account isolation, reward integrity, and atomic inventory operati
       await assert.rejects(rpc(db, 'game_snapshot'), /permission denied/);
       await assert.rejects(rpc(db, 'start_run'), /permission denied/);
     });
+  } finally { await db.close(); }
+});
+
+test('new accessories match the client catalog and share the single accessory slot', async () => {
+  const db = await createDatabase();
+  try {
+    await asUser(db, USER_A);
+    const rows = (await db.query('select id, name, kind, price from public.cosmetics order by id')).rows;
+    assert.deepEqual(rows, CATALOG.map(({ id, name, kind, price }) => ({ id, name, kind, price })).sort((a, b) => a.id.localeCompare(b.id)));
+    await rpc(db, 'game_snapshot');
+    await db.exec('reset role');
+    await db.query('update public.profiles set coins = 500 where user_id = $1', [USER_A]);
+    await asUser(db, USER_A);
+    await assert.rejects(rpc(db, 'equip_cosmetic', ['bee_hat']), /Buy this item/);
+    let snapshot = await rpc(db, 'purchase_cosmetic', ['bee_hat']);
+    assert.equal(snapshot.profile.coins, 300); assert.ok(snapshot.owned.includes('bee_hat'));
+    snapshot = await rpc(db, 'equip_cosmetic', ['bee_hat']);
+    assert.equal(snapshot.profile.equipped_accessory, 'bee_hat');
+    await rpc(db, 'purchase_cosmetic', ['glasses']);
+    snapshot = await rpc(db, 'equip_cosmetic', ['glasses']);
+    assert.equal(snapshot.profile.coins, 175); assert.equal(snapshot.profile.equipped_accessory, 'glasses');
+    await assert.rejects(rpc(db, 'purchase_cosmetic', ['frog_hat']), /Not enough coins/);
+    snapshot = await rpc(db, 'equip_cosmetic', [null]);
+    assert.equal(snapshot.profile.equipped_accessory, null);
   } finally { await db.close(); }
 });

@@ -1,5 +1,5 @@
 import { PGlite } from '@electric-sql/pglite';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 export const USER_A = '10000000-0000-4000-8000-000000000001';
 export const USER_B = '10000000-0000-4000-8000-000000000002';
 export async function createDatabase() {
@@ -9,7 +9,10 @@ export async function createDatabase() {
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth to authenticated, anon;
     grant execute on function auth.uid() to authenticated, anon;`);
-  await db.exec(await readFile(new URL('../supabase/migrations/20261025061429_dinocky_accounts_shop.sql', import.meta.url), 'utf8'));
+  const migrations = new URL('../supabase/migrations/', import.meta.url);
+  for (const name of (await readdir(migrations)).filter(file => file.endsWith('.sql')).sort()) {
+    await db.exec(await readFile(new URL(name, migrations), 'utf8'));
+  }
   await db.query(`insert into auth.users(id) values ($1), ($2)`, [USER_A, USER_B]);
   return db;
 }

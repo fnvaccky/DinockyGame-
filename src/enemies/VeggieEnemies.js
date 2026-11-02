@@ -96,3 +96,113 @@ export class CandyEnemy extends PatrolEnemy {
     ctx.restore();
   }
 }
+
+/** Plump, bouncy wild strawberry enemy that hops along the grove. */
+export class BerryBouncer extends PatrolEnemy {
+  constructor(x, y) {
+    super(x, y, 32, 34);
+    this.name = 'Sugarberry Bouncer';
+    this.isEdible = true;
+    this.baseY = y;
+    this.vx = -60;
+    this.patrolLeft = x - 90;
+    this.patrolRight = x + 120;
+    this.bounceHeight = 36;
+  }
+
+  update(dt, obstacles = []) {
+    super.update(dt, obstacles);
+    if (this.isAlive) {
+      this.y = this.baseY - Math.abs(Math.sin(this.timer * 4.2)) * this.bounceHeight;
+    }
+  }
+
+  render(ctx) {
+    if (!this.isAlive) return;
+    ctx.save();
+    ctx.translate(this.x + 16, this.y + 17);
+    const squish = Math.sin(this.timer * 4.2);
+    const sy = 1 + squish * 0.12;
+    const sx = 1 - squish * 0.1;
+    ctx.scale(sx, sy);
+
+    // Plump strawberry shape
+    ctx.fillStyle = '#E11D48';
+    ctx.beginPath();
+    ctx.moveTo(0, 16);
+    ctx.bezierCurveTo(-18, 12, -18, -12, 0, -14);
+    ctx.bezierCurveTo(18, -12, 18, 12, 0, 16);
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#9F1239';
+    ctx.stroke();
+
+    // Yellow seed specks
+    ctx.fillStyle = '#FEF08A';
+    for (const [sx, sy] of [[-6, -2], [5, -3], [-3, 6], [4, 7], [0, 0]]) {
+      ctx.fillRect(sx, sy, 2, 2.5);
+    }
+
+    // Leafy stem on top
+    ctx.fillStyle = '#22C55E';
+    ctx.beginPath();
+    ctx.moveTo(0, -13);
+    ctx.lineTo(-7, -20);
+    ctx.lineTo(-2, -15);
+    ctx.lineTo(0, -22);
+    ctx.lineTo(3, -15);
+    ctx.lineTo(8, -19);
+    ctx.closePath();
+    ctx.fill();
+
+    this.face(ctx, -2);
+    ctx.restore();
+  }
+}
+
+/** Crumbly chocolate sandwich cookie critter that waddles with a crunchy step. */
+export class ChocoCritter extends PatrolEnemy {
+  constructor(x, y) {
+    super(x, y, 34, 32);
+    this.name = 'Choco Crumb Critter';
+    this.isEdible = true;
+    this.vx = -48;
+    this.patrolLeft = x - 80;
+    this.patrolRight = x + 110;
+  }
+
+  render(ctx) {
+    if (!this.isAlive) return;
+    ctx.save();
+    ctx.translate(this.x + 17, this.y + 16);
+    const waddle = Math.sin(this.timer * 12) * 0.1;
+    ctx.rotate(waddle);
+
+    // Top chocolate wafer
+    ctx.fillStyle = '#5C2B14';
+    ctx.beginPath();
+    ctx.ellipse(0, -6, 15, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cream filling
+    ctx.fillStyle = '#FFFBEB';
+    ctx.fillRect(-14, -5, 28, 5);
+
+    // Bottom chocolate wafer
+    ctx.fillStyle = '#451A03';
+    ctx.beginPath();
+    ctx.ellipse(0, 4, 15, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Chocolate chip feet
+    const walk = Math.sin(this.timer * 12);
+    ctx.fillStyle = '#271003';
+    ctx.beginPath();
+    ctx.arc(-8, 12 + walk * 2, 3.5, 0, Math.PI * 2);
+    ctx.arc(8, 12 - walk * 2, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    this.face(ctx, -2);
+    ctx.restore();
+  }
+}
