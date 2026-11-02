@@ -31,7 +31,7 @@ test('database account isolation, reward integrity, and atomic inventory operati
     });
     await t.test('impossible elapsed times and scores are rejected', async () => {
       await assert.rejects(rpc(db, 'finish_run', [runId, 2000, 2, true]), /Invalid completion time/);
-      await assert.rejects(rpc(db, 'finish_run', [runId, 9000, 40, true]), /Invalid run result/);
+      await assert.rejects(rpc(db, 'finish_run', [runId, 25000, 40, true]), /Invalid run result/);
     });
     await ageRun(db, runId);
     await t.test('first clear gives 100 once, retries return the same receipt', async () => {
@@ -61,6 +61,32 @@ test('database account isolation, reward integrity, and atomic inventory operati
       await assert.rejects(rpc(db, 'game_snapshot'), /permission denied/);
       await assert.rejects(rpc(db, 'start_run'), /permission denied/);
     });
+  } finally { await db.close(); }
+});
+
+test('each level is recorded on its own; the boss pays double and Hard Mode doubles again', async () => {
+  const db = await createDatabase();
+  try {
+    await asUser(db, USER_A);
+    const clear = async (level, hard, score = 3000) => {
+      const id = await rpc(db, 'start_run', [level, hard]); await ageRun(db, id);
+      return rpc(db, 'finish_run', [id, score, 60, true]);
+    };
+    assert.equal((await clear('1-2', false)).reward, 100);
+    assert.equal((await clear('1-2', false)).reward, 25);
+    assert.equal((await clear('1-3', true)).reward, 200);
+    assert.equal((await clear('1-4', false)).reward, 200);
+    let receipt = await clear('1-4', true, 12000);
+    assert.equal(receipt.reward, 100);
+    const boss = receipt.snapshot.progress.find(p => p.level_id === '1-4');
+    assert.deepEqual([boss.clears, boss.hard_clears, boss.best_score], [2, 1, 12000]);
+    assert.equal(receipt.snapshot.progress.find(p => p.level_id === '1-1'), undefined);
+    assert.equal(receipt.snapshot.profile.coins, 625);
+    await assert.rejects(rpc(db, 'start_run', ['9-9', false]), /Level not found/);
+    // Older clients still start a normal 1-1 run without arguments.
+    const legacy = await rpc(db, 'start_run'); await ageRun(db, legacy);
+    receipt = await rpc(db, 'finish_run', [legacy, 1000, 50, true]);
+    assert.equal(receipt.reward, 100); assert.ok(receipt.snapshot.progress.some(p => p.level_id === '1-1'));
   } finally { await db.close(); }
 });
 

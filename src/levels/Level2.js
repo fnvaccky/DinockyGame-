@@ -4,6 +4,8 @@ import { CollectibleFood } from '../powerups/FoodPowers.js';
 import { StarTreat, JellyBouncePad } from './Collectibles.js';
 import { BroccoliEnemy } from '../enemies/Enemy.js';
 import { AngryCarrot, CandyEnemy, BerryBouncer, setPatrol } from '../enemies/VeggieEnemies.js';
+import { ChargerCarrot, BroccoliLobber, SwoopBee } from '../enemies/ThrillEnemies.js';
+import { MovingPlatform, CrumblePlatform, popSpikes } from './Hazards.js';
 
 export class Level2 extends BaseLevel {
   constructor() {
@@ -30,13 +32,11 @@ export class Level2 extends BaseLevel {
 
     // Candy branch platforms
     run(10, 18, 22, '=');
-    run(8, 23, 28, '=');
     run(6, 29, 34, '=');
     run(9, 38, 43, '=');
     run(7, 46, 51, '=');
     run(10, 55, 60, '=');
     run(8, 63, 68, '=');
-    run(6, 72, 78, '=');
     run(9, 83, 88, '=');
     run(7, 91, 96, '=');
     run(10, 100, 105, '=');
@@ -59,8 +59,13 @@ export class Level2 extends BaseLevel {
       { x: -40, y: -200, w: 40, h: 900, type: 'boundary', isPhaseable: false },
       { x: this.width, y: -200, w: 40, h: 900, type: 'boundary', isPhaseable: false }
     ];
-    this.oneWayPlatforms = this.tilemap.oneWayPlatforms;
-    this.hazards = this.tilemap.hazards;
+    // Crumbling branches and a platform gliding over the second pit.
+    this.crumblers = [new CrumblePlatform(920, 320, 200), new CrumblePlatform(2880, 240, 240)];
+    this.movers = [new MovingPlatform({ x: 2540, y: 400, w: 90, dx: 110, period: 3.2 })];
+    this.oneWayPlatforms = [...this.tilemap.oneWayPlatforms, ...this.crumblers, ...this.movers];
+    this.hazards = [...this.tilemap.hazards,
+      popSpikes(2000, 480, 64, { period: 2.4, up: 1.0 }),
+      popSpikes(3700, 480, 96, { period: 2.8, up: 1.3, offset: 1 })];
 
     // Jelly bounce pads for launching Dinocky into the treetops!
     this.bouncePads = [
@@ -96,13 +101,14 @@ export class Level2 extends BaseLevel {
     // Enemies
     this.enemies = [
       setPatrol(new BerryBouncer(560, 444), 460, 720),
-      setPatrol(new AngryCarrot(880, 444), 800, 1060),
+      setPatrol(new ChargerCarrot(880, 444), 800, 1060),
       setPatrol(new CandyEnemy(1440, 450), 1380, 1600),
       setPatrol(new BerryBouncer(1920, 444), 1800, 2100),
-      setPatrol(new BroccoliEnemy(2440, 442), 2380, 2600),
+      setPatrol(new BroccoliLobber(2440, 442), 2380, 2520),
+      setPatrol(new SwoopBee(1700, 220), 1600, 1900),
       setPatrol(new BerryBouncer(2820, 444), 2740, 3020),
-      setPatrol(new AngryCarrot(3260, 444), 3160, 3420),
-      setPatrol(new CandyEnemy(3540, 250), 3460, 3620),
+      setPatrol(new ChargerCarrot(3260, 444), 3160, 3420),
+      setPatrol(new SwoopBee(3540, 200), 3460, 3620),
       setPatrol(new BerryBouncer(4060, 444), 3960, 4220),
       setPatrol(new AngryCarrot(4280, 444), 4200, 4400)
     ];

@@ -20,9 +20,9 @@ export class GameSession {
       events.on('levelCompleted', data => { if (this.running) this.score += data.bonus; })
     ];
   }
-  start(runId, cosmetics, levelId = '1-1') {
-    this.stop(); this.runId = runId; this.levelId = levelId || '1-1';
-    this.level = createLevel(this.levelId);
+  start(runId, cosmetics, levelId = '1-1', { hard = false } = {}) {
+    this.stop(); this.runId = runId; this.levelId = levelId || '1-1'; this.hard = Boolean(hard);
+    this.level = createLevel(this.levelId, { hard: this.hard });
     this.player = new Player(this.level.spawn?.x || 80, this.level.spawn?.y || 480);
     this.score = 0; this.eaten = 0; this.result = null; this.applyCosmetics(cosmetics); this.resume();
   }
@@ -43,6 +43,8 @@ export class GameSession {
     this.callbacks.onUpdate?.({
       score: this.score,
       health: this.level.health,
+      maxHealth: this.level.maxHealth,
+      hard: this.hard,
       time: Math.ceil(this.level.timeLeft),
       power: this.player.powerManager.activePower,
       powerTime: Math.ceil(this.player.powerManager.powerTimer),
@@ -51,7 +53,7 @@ export class GameSession {
       levelTitle: this.level.title || this.level.name
     });
     if (['won', 'lost'].includes(this.level.status)) {
-      this.result = { runId: this.runId, levelId: this.levelId || '1-1', score: this.score,
+      this.result = { runId: this.runId, levelId: this.levelId || '1-1', hard: this.hard, score: this.score,
         elapsed: Math.round((240 - this.level.timeLeft) * 1000) / 1000, completed: this.level.status === 'won' };
       this.stop(); this.callbacks.onResult?.(this.result);
     }

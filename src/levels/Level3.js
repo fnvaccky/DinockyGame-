@@ -4,6 +4,8 @@ import { CollectibleFood } from '../powerups/FoodPowers.js';
 import { StarTreat, JellyBouncePad } from './Collectibles.js';
 import { BroccoliEnemy } from '../enemies/Enemy.js';
 import { AngryCarrot, CandyEnemy, BerryBouncer, ChocoCritter, setPatrol } from '../enemies/VeggieEnemies.js';
+import { ChargerCarrot, BroccoliLobber, SwoopBee } from '../enemies/ThrillEnemies.js';
+import { MovingPlatform, CrumblePlatform, popSpikes } from './Hazards.js';
 
 export class Level3 extends BaseLevel {
   constructor() {
@@ -32,15 +34,12 @@ export class Level3 extends BaseLevel {
 
     // Wafer step platforms
     run(10, 16, 20, '=');
-    run(8, 21, 26, '=');
     run(7, 27, 31, '=');
     run(9, 36, 41, '=');
-    run(7, 43, 49, '=');
     run(5, 51, 57, '=');
     run(8, 59, 64, '=');
     run(7, 66, 71, '=');
     run(10, 74, 79, '=');
-    run(8, 81, 86, '=');
     run(6, 88, 94, '=');
     run(9, 97, 102, '=');
     run(7, 105, 111, '=');
@@ -63,8 +62,16 @@ export class Level3 extends BaseLevel {
       { x: -40, y: -200, w: 40, h: 900, type: 'boundary', isPhaseable: false },
       { x: this.width, y: -200, w: 40, h: 900, type: 'boundary', isPhaseable: false }
     ];
-    this.oneWayPlatforms = this.tilemap.oneWayPlatforms;
-    this.hazards = this.tilemap.hazards;
+    this.crumblers = [new CrumblePlatform(840, 320, 200), new CrumblePlatform(1720, 280, 240), new CrumblePlatform(3240, 320, 200)];
+    this.movers = [
+      new MovingPlatform({ x: 2460, y: 440, w: 80, dy: -100, period: 3.6 }),
+      new MovingPlatform({ x: 3660, y: 400, w: 90, dx: 110, period: 3, phase: 0.5 })
+    ];
+    this.oneWayPlatforms = [...this.tilemap.oneWayPlatforms, ...this.crumblers, ...this.movers];
+    this.hazards = [...this.tilemap.hazards,
+      popSpikes(1640, 480, 64, { period: 2.2, up: 1.0 }),
+      popSpikes(3000, 480, 64, { period: 2.2, up: 1.0, offset: 1.1 }),
+      popSpikes(4300, 480, 96, { period: 2.6, up: 1.3 })];
 
     // Jelly bounce pads for leaping over the chocolate coves
     this.bouncePads = [
@@ -103,16 +110,18 @@ export class Level3 extends BaseLevel {
     // Enemies
     this.enemies = [
       setPatrol(new ChocoCritter(520, 444), 440, 680),
-      setPatrol(new AngryCarrot(840, 444), 760, 1000),
+      setPatrol(new ChargerCarrot(840, 444), 760, 1000),
+      setPatrol(new SwoopBee(1420, 200), 1300, 1560),
       setPatrol(new CandyEnemy(1380, 450), 1300, 1560),
       setPatrol(new BerryBouncer(1840, 444), 1740, 2000),
       setPatrol(new ChocoCritter(2220, 444), 2140, 2360),
-      setPatrol(new BroccoliEnemy(2740, 442), 2660, 2920),
+      setPatrol(new BroccoliLobber(2740, 442), 2660, 2920),
       setPatrol(new ChocoCritter(3160, 444), 3080, 3340),
-      setPatrol(new CandyEnemy(3480, 250), 3400, 3560),
+      setPatrol(new SwoopBee(3480, 180), 3400, 3560),
       setPatrol(new BerryBouncer(3940, 444), 3860, 4120),
       setPatrol(new ChocoCritter(4260, 444), 4180, 4400),
-      setPatrol(new AngryCarrot(4460, 444), 4380, 4580)
+      setPatrol(new ChargerCarrot(4460, 444), 4380, 4580),
+      setPatrol(new BroccoliLobber(4040, 442), 3960, 4120)
     ];
 
     this.spawn = { x: 80, y: 480 };

@@ -1,5 +1,6 @@
 import { TestArena } from './TestArena.js';
 import { events } from '../core/Events.js';
+import { updatePopSpikes } from './Hazards.js';
 
 const overlaps = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x &&
   a.y < b.y + b.h && a.y + a.h > b.y;
@@ -9,6 +10,8 @@ export class BaseLevel extends TestArena {
     super();
     this.status = 'ready';
     this.health = 3;
+    this.maxHealth = 3;
+    this.hard = false;
     this.timeLeft = 240;
     this.cameraX = 0;
     this.invulnerable = 0;
@@ -30,6 +33,106 @@ export class BaseLevel extends TestArena {
     this.ambientTimer = 0;
     this.flagTimer = 0;
     this.signs = [];
+
+    // Thrill systems: thrown projectiles, moving and crumbling platforms (also listed in
+    // oneWayPlatforms), and spikes with a `cycle` that pop up on a rhythm.
+    this.projectiles = [];
+    this.movers = [];
+    this.crumblers = [];
+    this.hazardTimer = 0;
+  }
+
+  /** Hard Mode: one heart, no checkpoint, faster enemies and quicker crumbling wafers. */
+  setHardMode(hard) {
+    this.hard = Boolean(hard);
+    if (!this.hard) return this;
+    this.health = this.maxHealth = 1;
+    this.checkpoint.disabled = true;
+    for (const enemy of this.enemies) {
+      if (enemy.isBoss) continue;
+      enemy.speedScale = 1.35; enemy.vx *= 1.35;
+      if (enemy.walkSpeed) enemy.walkSpeed *= 1.35;
+    }
+    for (const wafer of this.crumblers) wafer.delay *= 0.7;
+    return this;
+  }
+
+  spawnProjectile(projectile) {
+    this.projectiles.push({ life: 3, gravity: 0, r: 8, ...projectile });
+  }
+
+  /** Stomps defeat ordinary enemies outright; a boss decides for itself. */
+  defeatEnemy(enemy, points) {
+    if (enemy.takeHit) {
+      const scored = enemy.takeHit();
+      if (scored) events.emit('enemyDefeated', { enemy, points: scored, pos: { x: enemy.x, y: enemy.y } });
+      return;
+    }
+    enemy.isAlive = false;
+    this.addBurst(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, 12, ['#F472B6', '#FBBF24', '#60A5FA'], 'crumb');
+    events.emit('enemyDefeated', { enemy, points, pos: { x: enemy.x, y: enemy.y } });
+  }
+
+  _onPlatform(player, plat) {
+    const halfW = player.getHitbox().halfW;
+    return player.isGrounded && Math.abs(player.y - plat.y) < 2 &&
+      player.x + halfW > plat.x && player.x - halfW < plat.x + plat.w;
+  }
+
+  _updateThrills(dt, player) {
+    this.hazardTimer += dt;
+    for (const hazard of this.hazards) if (hazard.cycle) updatePopSpikes(hazard, this.hazardTimer);
+
+    // Riders move with their platform.
+    for (const mover of this.movers) {
+      const riding = this._onPlatform(player, mover);
+      const moved = mover.update(dt);
+      if (riding) { player.x += moved.x; player.y += moved.y; }
+    }
+    for (const wafer of this.crumblers) {
+      const solid = wafer.update(dt, this._onPlatform(player, wafer));
+      const index = this.oneWayPlatforms.indexOf(wafer);
+      if (!solid && index >= 0) this.oneWayPlatforms.splice(index, 1);
+      else if (solid && index < 0) this.oneWayPlatforms.push(wafer);
+    }
+
+    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      const p = this.projectiles[i];
+      p.life -= dt;
+      p.vy += p.gravity * dt;
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      const hitGround = p.kind !== 'shock' && this.obstacles.some(o => o.type !== 'boundary' &&
+        p.x > o.x && p.x < o.x + o.w && p.y + p.r > o.y && p.y < o.y + o.h);
+      if (p.life <= 0 || p.y > this.height + 50 || hitGround || p.x < -50 || p.x > this.width + 50) {
+        if (hitGround) this.addBurst(p.x, p.y, 6, p.kind === 'apple' ? ['#DC2626', '#FCA5A5'] : ['#16A34A', '#86EFAC'], 'crumb');
+        this.projectiles.splice(i, 1);
+      }
+    }
+  }
+
+  _renderThrills(ctx) {
+    for (const mover of this.movers) mover.render(ctx, this.theme);
+    for (const wafer of this.crumblers) wafer.render(ctx);
+    for (const p of this.projectiles) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      if (p.kind === 'shock') {
+        ctx.fillStyle = 'rgba(202, 138, 4, 0.85)';
+        ctx.beginPath(); ctx.moveTo(-p.r * 1.4, p.r); ctx.quadraticCurveTo(0, -p.r * 1.6, p.r * 1.4, p.r); ctx.fill();
+      } else if (p.kind === 'apple') {
+        ctx.fillStyle = '#DC2626';
+        ctx.beginPath(); ctx.arc(0, 0, p.r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#16A34A'; ctx.fillRect(-1, -p.r - 5, 3, 6);
+        // Shadow on the floor shows where the apple will land.
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+        ctx.beginPath(); ctx.ellipse(0, 480 - p.y, p.r, 4, 0, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.rotate(p.life * 8);
+        ctx.fillStyle = '#15803D';
+        for (const [fx, fy] of [[-4, -2], [4, -2], [0, 4]]) { ctx.beginPath(); ctx.arc(fx, fy, p.r * 0.6, 0, Math.PI * 2); ctx.fill(); }
+      }
+      ctx.restore();
+    }
   }
 
   triggerShake(intensity = 6, duration = 0.22) {
@@ -101,8 +204,12 @@ export class BaseLevel extends TestArena {
       }
     }
 
+    // Enemies that react to Dinocky decide before they move.
+    for (const enemy of this.enemies) if (enemy.isAlive) enemy.think?.(dt, player, this);
+
     // Base update for food items & enemies & popups
     super.update(dt, player);
+    this._updateThrills(dt, player);
 
     // Update patrol bounds for all enemies
     for (const enemy of this.enemies) {
@@ -127,9 +234,7 @@ export class BaseLevel extends TestArena {
       for (const enemy of this.enemies) {
         if (enemy.isAlive && Math.abs(enemy.x + enemy.w / 2 - player.x) < 150 &&
             Math.abs(enemy.y + enemy.h - player.y) < 65) {
-          enemy.isAlive = false;
-          this.addBurst(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, 12, ['#F472B6', '#FBBF24', '#60A5FA'], 'crumb');
-          events.emit('enemyDefeated', { enemy, points: 150, pos: { x: enemy.x, y: enemy.y } });
+          this.defeatEnemy(enemy, 150);
         }
       }
     }
@@ -141,16 +246,14 @@ export class BaseLevel extends TestArena {
     if (this.isStomping && player.vy > 0) {
       for (const enemy of this.enemies) {
         if (enemy.isAlive && overlaps(body, enemy) && body.y < enemy.y) {
-          enemy.isAlive = false;
           this.triggerShake(5, 0.18);
-          this.addBurst(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, 14, ['#F59E0B', '#EF4444', '#F472B6'], 'crumb');
-          events.emit('enemyDefeated', { enemy, points: 150, pos: { x: enemy.x, y: enemy.y } });
+          this.defeatEnemy(enemy, 150);
         }
       }
     }
 
     // Checkpoint activation
-    if (!this.checkpoint.active && player.x >= this.checkpoint.x && player.isGrounded && Math.abs(player.y - 480) < 5) {
+    if (!this.checkpoint.active && !this.checkpoint.disabled && player.x >= this.checkpoint.x && player.isGrounded && Math.abs(player.y - 480) < 5) {
       this.checkpoint.active = true;
       this.addPopup(this.checkpoint.x, 370, 'CHECKPOINT!', '#15803D');
       this.addBurst(this.checkpoint.x + 20, 360, 15, ['#22C55E', '#86EFAC', '#FEF08A'], 'sparkle');
@@ -220,9 +323,12 @@ export class BaseLevel extends TestArena {
     // Hazards and enemy collision damage
     if (player.y > this.height + 100) {
       this.hurt(player, true);
-    } else if (!player.isPhasing && (this.hazards.some(h => overlaps(body, h)) ||
-        this.enemies.some(e => e.isAlive && overlaps(body, e)))) {
+    } else if (!player.isPhasing && (this.hazards.some(h => h.active !== false && overlaps(body, h)) ||
+        this.enemies.some(e => e.isAlive && !e.harmless && overlaps(body, e)))) {
       this.hurt(player);
+    } else {
+      const hit = this.projectiles.findIndex(p => overlaps(body, { x: p.x - p.r, y: p.y - p.r, w: p.r * 2, h: p.r * 2 }));
+      if (hit >= 0 && !this.invulnerable) { this.projectiles.splice(hit, 1); this.hurt(player); }
     }
 
     // Level completion
@@ -282,10 +388,11 @@ export class BaseLevel extends TestArena {
     for (const h of this.hazards) {
       const spikeColor = this.theme === 'grove' ? '#BE185D' : this.theme === 'cove' ? '#78350F' : '#9F1239';
       ctx.fillStyle = spikeColor;
+      const height = !h.cycle || h.active ? h.h : h.warning && Math.floor(this.hazardTimer * 12) % 2 ? 7 : 3;
       for (let x = h.x; x < h.x + h.w; x += 16) {
         ctx.beginPath();
         ctx.moveTo(x, h.y + h.h);
-        ctx.lineTo(x + 8, h.y);
+        ctx.lineTo(x + 8, h.y + h.h - height);
         ctx.lineTo(x + 16, h.y + h.h);
         ctx.fill();
       }
@@ -307,7 +414,7 @@ export class BaseLevel extends TestArena {
     }
 
     // Render Flags
-    this.drawFlag(ctx, this.checkpoint.x, 480, this.checkpoint.active ? '#16A34A' : '#64748B', 'SAVE');
+    if (!this.checkpoint.disabled) this.drawFlag(ctx, this.checkpoint.x, 480, this.checkpoint.active ? '#16A34A' : '#64748B', 'SAVE');
     this.drawFlag(ctx, this.goal.x, 480, this.theme === 'grove' ? '#DB2777' : this.theme === 'cove' ? '#D97706' : '#DB2777', 'FINISH');
 
     // Render Collectible Treats
@@ -318,6 +425,7 @@ export class BaseLevel extends TestArena {
     // Render Foods & Enemies
     for (const food of this.foodItems) food.render(ctx);
     for (const enemy of this.enemies) enemy.render(ctx);
+    this._renderThrills(ctx);
 
     // Render Juice Particles
     this._renderParticles(ctx);

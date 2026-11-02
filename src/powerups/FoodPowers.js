@@ -257,6 +257,16 @@ export class FoodPowerManager {
         enemy.y + enemy.h > mouthHitbox.y &&
         enemy.y < mouthHitbox.y + mouthHitbox.h
       ) {
+        // Bosses are too big to swallow: a chomp only costs them a hit.
+        if (enemy.onChomp) {
+          const points = enemy.onChomp();
+          if (points) {
+            this.chewTimer = 1.0;
+            events.emit('enemyEaten', { enemy, points, pos: { x: enemy.x + enemy.w / 2, y: enemy.y + enemy.h / 2 } });
+          }
+          continue;
+        }
+
         // DINOCKY EATS THE ENEMY!
         enemy.isAlive = false;
         enemy.isEaten = true;

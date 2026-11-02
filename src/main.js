@@ -4,6 +4,7 @@ import { SoundEngine } from './audio/SoundEngine.js';
 import { AccountService } from './services/AccountService.js';
 import { RewardQueue } from './services/RewardQueue.js';
 import { CATALOG, normalizeCosmetics } from './cosmetics.js';
+import { LEVELS } from './levels/LevelRegistry.js';
 
 const $ = id => document.getElementById(id);
 const PANELS = { auth: 'authPanel', lobby: 'lobbyPanel', levels: 'levelsPanel', shop: 'shopPanel', settings: 'settingsPanel', results: 'resultsPanel', game: 'gamePanel' };
@@ -30,7 +31,7 @@ export class App {
       onPause: () => { $('pauseOverlay').hidden = false; this.sound.stop(); },
       onResult: result => { void this.finish(result); }
     });
-    this.settings = { sound: true, volume: 70, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches };
+    this.settings = { sound: true, volume: 70, hardMode: false, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches };
     try { Object.assign(this.settings, JSON.parse(localStorage.getItem('dinocky:settings') || '{}')); } catch { /* Browser storage may be unavailable. */ }
     this.applySettings(); this.bind(); this.renderShop(); this.show('auth', false);
     if (!this.account.client) {
@@ -114,6 +115,7 @@ export class App {
     const p11 = getProg('1-1');
     const p12 = getProg('1-2');
     const p13 = getProg('1-3');
+    const p14 = getProg('1-4');
 
     $('levelBest').textContent = p11 ? `Best: ${p11.best_score} · ${Number(p11.best_time).toFixed(1)}s · ${p11.clears} clears` : 'Your first adventure starts here';
 
@@ -139,6 +141,18 @@ export class App {
       if (small13) small13.textContent = p13 ? `Best: ${p13.best_score} · ${Number(p13.best_time).toFixed(1)}s · ${p13.clears} clears` : (unlocked13 ? 'Grand World 1 finale!' : 'Clear 1–2 to unlock');
       const icon13 = btn13.querySelector('.level-action-icon');
       if (icon13) icon13.innerHTML = unlocked13 ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 14 9L7 21Z" fill="currentColor" stroke="none"/></svg>' : '○';
+    }
+
+    // 1-4 Hog Hollow boss unlock: unlocked once 1-3 has >= 1 clear
+    const unlocked14 = (p13?.clears || 0) > 0 || (p14?.clears || 0) > 0;
+    const btn14 = $('playLevel14');
+    if (btn14) {
+      btn14.classList.toggle('available', unlocked14);
+      btn14.classList.toggle('locked', !unlocked14);
+      const small14 = $('levelBest14');
+      if (small14) small14.textContent = p14 ? `Best: ${p14.best_score} · ${Number(p14.best_time).toFixed(1)}s · ${p14.clears} clears` : (unlocked14 ? 'Sir Oinksalot awaits. Bring snacks!' : 'Clear 1–3 to unlock');
+      const icon14 = btn14.querySelector('.level-action-icon');
+      if (icon14) icon14.innerHTML = unlocked14 ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 14 9L7 21Z" fill="currentColor" stroke="none"/></svg>' : '○';
     }
 
     this.scene.setCosmetics(this.equipped());
@@ -194,10 +208,18 @@ export class App {
         }
       };
     }
+    $('playLevel14').onclick = () => {
+      if ($('playLevel14').classList.contains('available')) {
+        this.selectedLevel = '1-4'; void this.startLevel('1-4');
+      } else {
+        this.toast('Clear Cookie Crumble Cove (1–3) to face the boss!');
+      }
+    };
+    $('hardMode').onchange = () => { this.settings.hardMode = $('hardMode').checked; this.applySettings(); };
     $('replayLevel').onclick = () => { void this.startLevel(this.selectedLevel || '1-1'); };
     if ($('nextLevel')) {
       $('nextLevel').onclick = () => {
-        const next = this.selectedLevel === '1-1' ? '1-2' : this.selectedLevel === '1-2' ? '1-3' : '1-1';
+        const next = this.nextLevelId(this.selectedLevel) || '1-1';
         this.selectedLevel = next;
         void this.startLevel(next);
       };
@@ -269,18 +291,21 @@ export class App {
     this.starting = true; this.selectedLevel = levelId; this.busy(true, 'Packing your snacks…');
     const userId = this.user.id;
     try {
-      const runId = await this.account.startRun();
+      const hard = Boolean(this.settings.hardMode);
+      const runId = await this.account.startRun(levelId, hard);
       if (this.user?.id !== userId) return;
       $('pauseOverlay').hidden = true; this.show('game');
-      const levelTitle = levelId === '1-2' ? 'Sugarberry Grove' : levelId === '1-3' ? 'Cookie Crumble Cove' : 'Snack Meadow';
-      this.updateGameHUD({ health: 3, time: 240, score: 0, levelId, levelTitle });
-      this.game.start(runId, this.equipped(), levelId); $('gameCanvas').focus();
+      const levelTitle = LEVELS.find(level => level.id === levelId)?.name || 'Snack Meadow';
+      this.updateGameHUD({ health: hard ? 1 : 3, maxHealth: hard ? 1 : 3, time: 240, score: 0, levelId, levelTitle });
+      this.game.start(runId, this.equipped(), levelId, { hard }); $('gameCanvas').focus();
     } catch (error) { this.toast(navigator.onLine ? safeMessage(error) : 'Connect to the internet to start an adventure.'); }
     finally { this.starting = false; this.busy(false); }
   }
+  nextLevelId(levelId) { return LEVELS[LEVELS.findIndex(level => level.id === levelId) + 1]?.id; }
   updateGameHUD(value) {
-    $('gameHearts').textContent = '♥'.repeat(value.health) + '♡'.repeat(3 - value.health);
-    $('gameHearts').setAttribute('aria-label', `${value.health} of 3 hearts`);
+    const max = value.maxHealth ?? 3, health = Math.max(0, value.health);
+    $('gameHearts').textContent = '♥'.repeat(health) + '♡'.repeat(Math.max(0, max - health));
+    $('gameHearts').setAttribute('aria-label', `${health} of ${max} ${max === 1 ? 'heart' : 'hearts'}${value.hard ? ', Hard Mode' : ''}`);
     $('gameTime').textContent = value.time; $('gameScore').textContent = value.score;
     if ($('gameLevelTitle')) $('gameLevelTitle').textContent = value.levelTitle || 'Snack Meadow';
     if ($('gameLevelNumber')) $('gameLevelNumber').textContent = value.levelId || '1–1';
@@ -303,7 +328,7 @@ export class App {
     this.lastResult = result; this.queue.add(this.user.id, result);
     $('resultsTitle').textContent = result.completed ? 'Sweet success!' : 'Another little try?';
     $('resultsSubtitle').textContent = result.completed
-      ? (result.levelId === '1-3' ? '★ World 1 Champion! All delicious secrets unlocked! ★' : 'That was one delicious adventure.')
+      ? (result.levelId === '1-4' ? '★ Sir Oinksalot is beaten! World 1 Champion! ★' : result.hard ? 'Hard Mode cleared. Double coins!' : 'That was one delicious adventure.')
       : 'Every great explorer takes a few tumbles.';
     $('resultScore').textContent = result.score;
     const prog = this.getLocalProgress()[result.levelId] || this.snapshot.progress?.find(p => p.level_id === result.levelId);
@@ -312,9 +337,10 @@ export class App {
 
     const nextBtn = $('nextLevel');
     if (nextBtn) {
-      if (result.completed && (result.levelId === '1-1' || result.levelId === '1-2')) {
+      const next = LEVELS.find(level => level.id === this.nextLevelId(result.levelId));
+      if (result.completed && next) {
         nextBtn.hidden = false;
-        nextBtn.textContent = result.levelId === '1-1' ? 'Next: Sugarberry Grove (1–2) →' : 'Next: Cookie Crumble Cove (1–3) →';
+        nextBtn.textContent = `Next: ${next.name} (${next.number}) →`;
       } else {
         nextBtn.hidden = true;
       }
@@ -338,7 +364,7 @@ export class App {
         if (receipt.runId === this.lastResult?.runId) {
           $('resultCoins').textContent = receipt.rejected ? '0' : `+${receipt.reward}`;
           $('saveStatus').textContent = receipt.rejected ? receipt.rejected : 'All saved. Your next adventure is waiting.';
-          $('resultBest').textContent = this.snapshot.progress.find(p => p.level_id === '1-1')?.best_score ?? '—';
+          $('resultBest').textContent = this.snapshot.progress.find(p => p.level_id === this.lastResult.levelId)?.best_score ?? $('resultBest').textContent;
         }
       }
       const pending = this.queue.read(userId).length > 0;
@@ -393,6 +419,7 @@ export class App {
     this.settings.volume = Math.max(0, Math.min(100, Number(this.settings.volume) || 0));
     $('soundEnabled').checked = Boolean(this.settings.sound); $('volume').value = this.settings.volume;
     $('volumeLabel').textContent = `${this.settings.volume}%`; $('reducedMotion').checked = Boolean(this.settings.reducedMotion);
+    $('hardMode').checked = Boolean(this.settings.hardMode);
     this.sound.setMuted(!this.settings.sound); this.sound.setVolume(this.settings.volume / 100); this.scene.setReducedMotion(Boolean(this.settings.reducedMotion));
     try { localStorage.setItem('dinocky:settings', JSON.stringify(this.settings)); } catch { /* Settings still work for this visit. */ }
   }

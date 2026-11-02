@@ -4,6 +4,8 @@ import { CollectibleFood } from '../powerups/FoodPowers.js';
 import { StarTreat } from './Collectibles.js';
 import { BroccoliEnemy } from '../enemies/Enemy.js';
 import { AngryCarrot, CandyEnemy, setPatrol } from '../enemies/VeggieEnemies.js';
+import { ChargerCarrot, BroccoliLobber, SwoopBee } from '../enemies/ThrillEnemies.js';
+import { MovingPlatform, CrumblePlatform, popSpikes } from './Hazards.js';
 
 export class Level1 extends BaseLevel {
   constructor() {
@@ -32,7 +34,7 @@ export class Level1 extends BaseLevel {
       { x: -40, y: -200, w: 40, h: 900, type: 'boundary', isPhaseable: false },
       { x: this.width, y: -200, w: 40, h: 900, type: 'boundary', isPhaseable: false }];
     this.oneWayPlatforms = this.tilemap.oneWayPlatforms;
-    this.hazards = this.tilemap.hazards;
+    this.hazards = [...this.tilemap.hazards, popSpikes(3640, 480, 64, { period: 2.6, up: 1.1 })];
     this.foodItems = [
       new CollectibleFood(240, 448, 'PIZZA'),
       new CollectibleFood(760, 288, 'PIZZA'),
@@ -53,13 +55,13 @@ export class Level1 extends BaseLevel {
     ];
     this.enemies = [
       setPatrol(new BroccoliEnemy(440, 442), 360, 560),
-      setPatrol(new AngryCarrot(820, 444), 720, 980),
+      setPatrol(new ChargerCarrot(820, 444), 720, 980),
       setPatrol(new CandyEnemy(1720, 450), 1680, 1930),
       setPatrol(new AngryCarrot(2240, 444), 2200, 2360),
-      setPatrol(new BroccoliEnemy(2820, 442), 2780, 2960),
+      setPatrol(new BroccoliLobber(2820, 442), 2780, 2960),
       setPatrol(new AngryCarrot(2900, 444), 2780, 2960),
       setPatrol(new CandyEnemy(3500, 290), 3400, 3520),
-      setPatrol(new CandyEnemy(3860, 450), 3780, 3960),
+      setPatrol(new SwoopBee(3860, 250), 3780, 3960),
       setPatrol(new AngryCarrot(4130, 444), 4050, 4250)
     ];
     this.spawn = { x: 80, y: 480 };

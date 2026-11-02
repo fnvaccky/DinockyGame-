@@ -19,7 +19,14 @@ export class AccountService {
   async logout() { const { error } = await this.requireClient().auth.signOut(); if (error) throw error; this.user = null; }
   async rpc(name, args = {}) { const { data, error } = await this.requireClient().rpc(name, args); if (error) throw error; return data; }
   snapshot() { return this.rpc('game_snapshot'); }
-  startRun() { return this.rpc('start_run'); }
+  async startRun(levelId = '1-1', hard = false) {
+    try { return await this.rpc('start_run', { p_level_id: levelId, p_hard: hard }); }
+    catch (error) {
+      // Before the levels migration the server only knows start_run() with no arguments.
+      if (error?.code === 'PGRST202') return this.rpc('start_run');
+      throw error;
+    }
+  }
   purchase(id) { return this.rpc('purchase_cosmetic', { p_item_id: id }); }
   equip(id) { return this.rpc('equip_cosmetic', { p_item_id: id }); }
   unequip(id) { return this.rpc('unequip_cosmetic', { p_item_id: id }); }

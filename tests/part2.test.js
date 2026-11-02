@@ -78,6 +78,11 @@ test('world includes all foods and enemies supported by safe patrol surfaces', (
   assert.equal(level.enemies.length, 9);
   assert.ok(level.hazards.length >= 2);
   for (const enemy of level.enemies) {
+    // Flyers patrol the air above solid ground instead of standing on a surface.
+    if (enemy.isFlying) {
+      assert.ok(level.obstacles.some(o => o.type === 'ground' && o.x <= enemy.patrolLeft && o.x + o.w >= enemy.patrolRight));
+      continue;
+    }
     const floor = (enemy.baseY ?? enemy.y) + enemy.h;
     assert.ok([...level.obstacles, ...level.oneWayPlatforms].some(surface =>
       surface.y === floor && surface.x <= enemy.patrolLeft && surface.x + surface.w >= enemy.patrolRight));
@@ -252,4 +257,104 @@ test('Level 2 and Level 3 provide rich worlds, new enemies, jelly pads and star 
   player.vy = 200;
   l2.update(dt, player);
   assert.ok(player.vy < -600, 'Jelly pad should launch player upward');
+});
+
+test('thrill enemies charge, lob and swoop at Dinocky', async () => {
+  const { ChargerCarrot, BroccoliLobber, SwoopBee } = await import('../src/enemies/ThrillEnemies.js');
+  const level = { popups: [], projectiles: [], addPopup() {}, spawnProjectile(p) { this.projectiles.push(p); } };
+  const charger = setPatrol(new ChargerCarrot(400, 444), 200, 700);
+  const player = new Player(250, 480);
+  let fastest = 0;
+  for (let i = 0; i < 180; i++) {
+    charger.think(dt, player, level); charger.update(dt);
+    fastest = Math.max(fastest, Math.abs(charger.vx));
+    assert.ok(charger.x >= 200 && charger.x + charger.w <= 700);
+  }
+  assert.ok(fastest >= 300, 'charger dashes once it spots Dinocky ahead');
+
+  const lobber = new BroccoliLobber(600, 442);
+  for (let i = 0; i < 200; i++) lobber.think(dt, player, level);
+  assert.ok(level.projectiles.length >= 1);
+  const shot = level.projectiles[0];
+  // Following the arc for one second lands the floret on Dinocky.
+  assert.ok(Math.abs(shot.x + shot.vx - player.x) < 1 && Math.abs(shot.y + shot.vy + shot.gravity / 2 - (player.y - 24)) < 1);
+
+  const bee = setPatrol(new SwoopBee(240, 250), 150, 400);
+  let lowest = bee.y;
+  for (let i = 0; i < 300; i++) { bee.think(dt, player); bee.update(dt); lowest = Math.max(lowest, bee.y); }
+  assert.ok(lowest > 400, 'bee dives toward Dinocky');
+  assert.ok(bee.isFlying && bee.isEdible);
+});
+
+test('moving platforms carry riders, wafers crumble and regrow, pop-up spikes cycle', async () => {
+  const { Level2 } = await import('../src/levels/Level2.js');
+  const level = new Level2(); level.status = 'playing';
+  const mover = level.movers[0], player = new Player(mover.x + 40, mover.y);
+  player.isGrounded = true;
+  const offset = player.x - mover.x;
+  for (let i = 0; i < 60; i++) level.update(dt, player);
+  assert.ok(mover.x > mover.baseX + 10 && Math.abs(player.x - mover.x - offset) < 0.01 && player.y === mover.y);
+
+  const wafer = level.crumblers[0], standing = new Player(wafer.x + 50, wafer.y);
+  standing.isGrounded = true;
+  const fresh = new Level2(); fresh.status = 'playing';
+  const freshWafer = fresh.crumblers[0];
+  for (let i = 0; i < 50; i++) fresh.update(dt, standing);
+  assert.equal(freshWafer.state, 'gone'); assert.ok(!fresh.oneWayPlatforms.includes(freshWafer));
+  for (let i = 0; i < 200; i++) fresh.update(dt, new Player(80, 480));
+  assert.equal(freshWafer.state, 'solid'); assert.ok(fresh.oneWayPlatforms.includes(freshWafer));
+
+  const spikes = level.hazards.find(h => h.cycle), seen = new Set();
+  for (let i = 0; i < 200; i++) { level.update(dt, new Player(80, 480)); seen.add(`${spikes.active}/${spikes.warning}`); }
+  assert.ok(seen.has('true/false') && seen.has('false/true') && seen.has('false/false'));
+  assert.equal(wafer.x, 920);
+});
+
+test('Hard Mode: one heart, no checkpoint, faster enemies', async () => {
+  const { createLevel } = await import('../src/levels/LevelRegistry.js');
+  const normal = createLevel('1-1'), hard = createLevel('1-1', { hard: true });
+  assert.deepEqual([normal.health, hard.health, hard.maxHealth], [3, 1, 1]);
+  assert.ok(hard.checkpoint.disabled && !normal.checkpoint.disabled);
+  hard.enemies.forEach((enemy, i) => assert.ok(Math.abs(enemy.vx) > Math.abs(normal.enemies[i].vx)));
+  const player = new Player(80, 480); hard.status = 'playing'; hard.hurt(player);
+  assert.equal(hard.status, 'lost');
+  player.x = 2500; player.y = 480; player.isGrounded = true; hard.status = 'playing';
+  hard.update(dt, player); assert.equal(hard.checkpoint.active, false);
+});
+
+test('Sir Oinksalot charges, gets dizzy, can only be chomped while dizzy, and leaves the flag behind', async () => {
+  const { createLevel } = await import('../src/levels/LevelRegistry.js');
+  for (const hard of [false, true]) {
+    const level = createLevel('1-4', { hard }), boss = level.boss, physics = new Physics();
+    const player = new Player(1300, 480); player.isGrounded = true; level.status = 'playing';
+    assert.equal(boss.maxHp, hard ? 4 : 3);
+    const states = new Set();
+    let chompedTooEarly = false;
+    for (let frame = 0; frame < 60 * 120 && level.status === 'playing'; frame++) {
+      if (boss.state === 'dizzy') {
+        // Stand next to the dizzy pig, facing it, and chomp.
+        const right = boss.x + boss.w / 2 < 1680;
+        player.x = right ? boss.x + boss.w + 30 : boss.x - 30; player.y = 480; player.facing = right ? -1 : 1;
+        player.powerManager.chompCooldown = 0; player.powerManager.triggerChomp(player, level.enemies);
+      } else if (boss.state !== 'defeated' && boss.isAlive) {
+        // Wait on the ledge away from the pig; chomping now must not hurt him.
+        player.x = boss.x + boss.w / 2 > 1680 ? 1290 : 2070; player.y = 360;
+        if (boss.state === 'windup') {
+          const hp = boss.hp; player.powerManager.chompCooldown = 0; player.powerManager.triggerChomp(player, level.enemies);
+          chompedTooEarly ||= boss.hp !== hp;
+        }
+      } else if (level.goal.w) { player.x = level.goal.x + 10; player.y = 480; }
+      player.vy = 0; player.isGrounded = true;
+      level.beforeUpdate(player, noInput);
+      physics.update(player, noInput, level.obstacles, level.oneWayPlatforms, dt);
+      player.update(dt, noInput, level.enemies);
+      level.update(dt, player);
+      states.add(boss.state);
+      if (level.arenaLocked) assert.equal(level.cameraX, 1200);
+    }
+    assert.equal(level.status, 'won', `boss fight ended in ${level.status}`);
+    assert.equal(chompedTooEarly, false);
+    for (const state of ['intro', 'windup', 'charge', 'dizzy', 'hurt', 'leap', 'defeated']) assert.ok(states.has(state), state);
+    assert.ok(level.obstacles.includes(level.gate), 'the arena gate closes');
+  }
 });
