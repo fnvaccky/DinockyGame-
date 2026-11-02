@@ -75,15 +75,19 @@ test('normalizeCosmetics accepts every catalog accessory and nothing else', () =
   // One outfit at a time, worn under everything else.
   assert.deepEqual(OUTFITS, ['suit', 'explorer', 'hoodie']);
   assert.deepEqual(normalizeCosmetics({ accessories: ['cap', 'suit', 'glasses', 'hoodie'] }).accessories, ['hoodie', 'glasses', 'cap']);
+  // The scarf and outfits swap: whichever comes later stays on.
+  assert.deepEqual(normalizeCosmetics({ accessories: ['scarf', 'cap', 'suit'] }).accessories, ['suit', 'cap']);
+  assert.deepEqual(normalizeCosmetics({ accessories: ['suit', 'glasses', 'scarf'] }).accessories, ['scarf', 'glasses']);
 });
 
-test('outfits stack with a hat, scarf and glasses; the hood hides under hats', async () => {
+test('outfits stack with a hat and glasses but replace the scarf; the hood hides under hats', async () => {
   const fallback = new Dinocky3D();
   const model = new Dinocky3D(); await model.load({ loadAsync: loadModel }); await model.accessoriesReady;
   assert.equal(model.hood.name, 'Accessory_hoodie_hood');
   assert.ok(model.hood.parent && model.hood !== model.accessories.hoodie);
   for (const target of [fallback, model]) {
-    target.setCosmetics({ accessories: ['explorer', 'cap', 'scarf', 'glasses'] }); assertWearing(target, ['explorer', 'scarf', 'glasses', 'cap']);
+    target.setCosmetics({ accessories: ['scarf', 'explorer', 'cap', 'glasses'] }); assertWearing(target, ['explorer', 'glasses', 'cap']);
+    target.setCosmetics({ accessories: ['explorer', 'cap', 'scarf'] }); assertWearing(target, ['scarf', 'cap']);
     target.setCosmetics({ accessories: ['explorer', 'suit'] }); assertWearing(target, ['suit']);
     target.setCosmetics({ accessories: ['hoodie'] }); assertWearing(target, ['hoodie']); assert.ok(target.hood.visible);
     target.setCosmetics({ accessories: ['hoodie', 'frog_hat'] }); assertWearing(target, ['hoodie', 'frog_hat']); assert.equal(target.hood.visible, false);

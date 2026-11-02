@@ -100,8 +100,12 @@ test('new accessories match the client catalog and stack one per slot', async ()
     await db.exec('reset role'); await db.query('update public.profiles set coins = 600 where user_id = $1', [USER_A]); await asUser(db, USER_A);
     await rpc(db, 'purchase_cosmetic', ['suit']); snapshot = await rpc(db, 'purchase_cosmetic', ['hoodie']);
     assert.equal(snapshot.profile.coins, 50);
+    // An outfit takes the scarf off (and the scarf takes the outfit off); the hat stays on.
     snapshot = await rpc(db, 'equip_cosmetic', ['suit']);
-    assert.deepEqual([snapshot.profile.equipped_body, snapshot.profile.equipped_hat, snapshot.profile.equipped_neck], ['suit', 'cap', 'scarf']);
+    assert.deepEqual([snapshot.profile.equipped_body, snapshot.profile.equipped_hat, snapshot.profile.equipped_neck], ['suit', 'cap', null]);
+    snapshot = await rpc(db, 'equip_cosmetic', ['scarf']);
+    assert.deepEqual([snapshot.profile.equipped_body, snapshot.profile.equipped_hat, snapshot.profile.equipped_neck], [null, 'cap', 'scarf']);
+    await rpc(db, 'equip_cosmetic', ['suit']);
     snapshot = await rpc(db, 'equip_cosmetic', ['hoodie']);
     assert.equal(snapshot.profile.equipped_body, 'hoodie');
     snapshot = await rpc(db, 'unequip_cosmetic', ['hoodie']);

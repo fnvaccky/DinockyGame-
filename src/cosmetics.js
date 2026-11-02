@@ -18,11 +18,14 @@ export const HATS = Object.freeze(CATALOG.filter(item => item.slot === 'hat').ma
 export const OUTFITS = Object.freeze(CATALOG.filter(item => item.slot === 'body').map(item => item.id));
 export function palette(id = 'pink') { return CATALOG.find(item => item.id === id && item.kind === 'color') || CATALOG[0]; }
 const accessory = id => CATALOG.find(item => item.kind === 'accessory' && item.id === id);
+// The scarf and outfits don't layer: wearing one takes the other off.
+const CLASHES = Object.freeze({ body: 'neck', neck: 'body' });
 // Accepts `accessories` (later ids win their slot) and the older single `accessory` field.
 export function normalizeCosmetics(value = {}) {
   const bySlot = {};
   for (const id of [].concat(value.accessory ?? [], value.accessories ?? [])) {
-    const item = accessory(id); if (item) bySlot[item.slot] = item.id;
+    const item = accessory(id); if (!item) continue;
+    bySlot[item.slot] = item.id; delete bySlot[CLASHES[item.slot]];
   }
   return { color: palette(value.color).id, accessories: SLOTS.map(slot => bySlot[slot]).filter(Boolean) };
 }
