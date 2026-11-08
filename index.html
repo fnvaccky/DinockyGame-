@@ -99,6 +99,16 @@
       <section id="gamePanel" class="game-panel" hidden aria-label="Dinocky gameplay">
         <div class="game-hud"><strong id="gameLevelHeader"><span id="gameLevelTitle">Snack Meadow</span> <span id="gameLevelNumber">1–1</span></strong><span id="gameHearts" aria-label="3 hearts">♥♥♥</span><span>Time <b id="gameTime">240</b></span><span>Score <b id="gameScore">0</b></span><div class="power-hud-wrap"><span id="gamePower">Find a snack!</span><div id="gamePowerMeter" class="power-meter" hidden><div id="gamePowerBar" class="power-bar"></div></div></div><div class="hud-buttons"><button id="fullscreenToggle" class="icon-button" aria-label="Full screen" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button><button id="pauseGame" class="icon-button" aria-label="Pause game"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke-width="4"/></svg></button></div></div>
         <div class="game-view"><canvas id="gameCanvas" width="960" height="540" tabindex="0" aria-label="Dinocky Adventure. Use arrows to move, Space to jump, X to chomp."></canvas>
+          <div id="gameTutorialBubble" class="tutorial-bubble" hidden aria-live="polite">
+            <span class="tutorial-badge">Tutorial</span>
+            <div class="tutorial-bubble-content">
+              <span id="tutorialIcon" class="tutorial-icon" aria-hidden="true">🦖</span>
+              <div class="tutorial-body">
+                <strong id="tutorialTitle">Welcome to Snack Meadow!</strong>
+                <p id="tutorialDetail">Use A / D or Arrow Keys to move · Space to jump!</p>
+              </div>
+            </div>
+          </div>
           <div id="pauseOverlay" class="pause-overlay" hidden><h2>Snack break?</h2><p>Your adventure can wait a little.</p><button id="resumeGame" class="button primary">Keep playing</button><button id="leaveGame" class="button secondary">Return to menu</button></div>
         </div>
         <div id="touchControls" class="touch-controls"><div><button data-control="left" aria-label="Move left">←</button><button data-control="down" aria-label="Down or stomp">↓</button><button data-control="right" aria-label="Move right">→</button></div><div><button data-control="chomp" class="touch-chomp">Chomp</button><button data-control="jump" class="touch-jump">Jump</button></div></div>

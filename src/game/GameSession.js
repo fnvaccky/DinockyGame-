@@ -50,7 +50,8 @@ export class GameSession {
       powerTime: Math.ceil(this.player.powerManager.powerTimer),
       levelId: this.levelId,
       levelName: this.level.name,
-      levelTitle: this.level.title || this.level.name
+      levelTitle: this.level.title || this.level.name,
+      tutorial: this.level.activeTutorial ? { ...this.level.activeTutorial } : null
     });
     if (['won', 'lost'].includes(this.level.status)) {
       this.result = { runId: this.runId, levelId: this.levelId || '1-1', hard: this.hard, score: this.score,

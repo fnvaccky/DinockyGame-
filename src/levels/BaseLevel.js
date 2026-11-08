@@ -338,6 +338,24 @@ export class BaseLevel extends TestArena {
       events.emit('levelCompleted', { bonus: Math.ceil(this.timeLeft) * 10 });
     }
 
+    // Tutorial milestones (Level 1 only)
+    if (this.tutorialTimer > 0) {
+      this.tutorialTimer -= dt;
+      if (this.tutorialTimer <= 0) {
+        this.activeTutorial = null;
+      }
+    }
+    if (this.tutorialSteps) {
+      for (const step of this.tutorialSteps) {
+        if (!this.triggeredTutorials.has(step.id) && Math.abs(player.x - step.x) < 140) {
+          this.triggeredTutorials.add(step.id);
+          this.activeTutorial = step;
+          this.tutorialTimer = 3.6;
+          break;
+        }
+      }
+    }
+
     // Smooth camera track
     this.cameraX = Math.max(0, Math.min(this.width - 960, player.x - 320));
   }
@@ -398,14 +416,22 @@ export class BaseLevel extends TestArena {
       }
     }
 
-    // Render Signs
-    for (const [x, y, title, detail] of this.signs) {
-      ctx.textAlign = 'left';
-      ctx.fillStyle = this.theme === 'grove' ? '#831843' : this.theme === 'cove' ? '#581C87' : '#4C1D95';
-      ctx.font = 'bold 16px sans-serif';
-      ctx.fillText(title, x, y);
-      ctx.font = '12px sans-serif';
-      ctx.fillText(detail, x, y + 20);
+    // Render decorative wooden signposts in the background grass
+    for (const [x] of this.signs) {
+      ctx.save();
+      ctx.fillStyle = '#8B5A2B';
+      ctx.fillRect(x + 12, 442, 6, 38);
+      ctx.fillStyle = '#C19A6B';
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(x - 4, 422, 38, 22, 4) : ctx.rect(x - 4, 422, 38, 22);
+      ctx.fill();
+      ctx.strokeStyle = '#6E471E';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#6E471E';
+      ctx.fillRect(x + 4, 429, 20, 2);
+      ctx.fillRect(x + 4, 434, 14, 2);
+      ctx.restore();
     }
 
     // Render Bounce Pads
@@ -568,14 +594,47 @@ export class BaseLevel extends TestArena {
         ctx.stroke();
         ctx.restore();
 
-        // Label banner
-        ctx.fillStyle = '#F3E8FF';
-        ctx.font = 'bold 9px sans-serif';
-        ctx.textAlign = 'center';
+        // Glowing Donut Emblem in center of barrier
+        const cx = obs.x + obs.w / 2;
+        const cy = obs.y + obs.h / 2;
+        const pulse = 1 + Math.sin(time * 2.5) * 0.08;
+
         ctx.save();
-        ctx.translate(obs.x + obs.w / 2, obs.y + obs.h / 2);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText('DONUT PHASE WALL', 0, 3);
+        ctx.translate(cx, cy);
+        ctx.scale(pulse, pulse);
+
+        // Soft halo
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.beginPath();
+        ctx.arc(0, 0, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Golden doughnut dough
+        ctx.fillStyle = '#E89E58';
+        ctx.beginPath();
+        ctx.arc(0, 0, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Pink strawberry frosting
+        ctx.fillStyle = '#F472B6';
+        ctx.beginPath();
+        ctx.arc(0, -1, 9.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner hole
+        ctx.fillStyle = `rgba(168, 85, 247, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sprinkles
+        ctx.fillStyle = '#FEF08A';
+        ctx.fillRect(-5, -5, 2, 2.5);
+        ctx.fillRect(3, -4, 2.5, 2);
+        ctx.fillStyle = '#6EE7B7';
+        ctx.fillRect(-2, -7, 2.5, 2);
+        ctx.fillRect(2, 3, 2, 2.5);
+
         ctx.restore();
         ctx.restore();
       } else {
@@ -596,17 +655,27 @@ export class BaseLevel extends TestArena {
       ctx.save();
       const topColor = this.theme === 'grove' ? '#F43F5E' : this.theme === 'cove' ? '#EA580C' : '#F472B6';
       const bodyColor = this.theme === 'grove' ? '#FDA4AF' : this.theme === 'cove' ? '#FDBA74' : '#FDA4AF';
+      const r = Math.min(6, plat.h / 2);
 
-      ctx.fillStyle = topColor;
-      ctx.fillRect(plat.x, plat.y, plat.w, 5);
-
+      // Main candy shelf body with rounded ends
       ctx.fillStyle = bodyColor;
-      ctx.fillRect(plat.x, plat.y + 5, plat.w, plat.h - 5);
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(plat.x, plat.y, plat.w, plat.h, [r, r, r, r]) : ctx.rect(plat.x, plat.y, plat.w, plat.h);
+      ctx.fill();
 
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '9px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('▲ JUMP-THROUGH ▲', plat.x + plat.w / 2, plat.y + 11);
+      // Frosted top glaze
+      ctx.fillStyle = topColor;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(plat.x, plat.y, plat.w, 4, [r, r, 0, 0]) : ctx.rect(plat.x, plat.y, plat.w, 4);
+      ctx.fill();
+
+      // Delicate sugar glaze highlights
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      for (let x = plat.x + 10; x < plat.x + plat.w - 6; x += 16) {
+        ctx.beginPath();
+        ctx.arc(x, plat.y + 2, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
   }

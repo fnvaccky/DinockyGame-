@@ -82,6 +82,16 @@ export class Level1 extends BaseLevel {
       [2150, 330, 'BURGER STOMP', 'Down while in the air'],
       [3280, 350, 'SWEET SUMMIT', 'Follow the upper food trail']
     ];
+    this.tutorialSteps = [
+      { id: 'welcome', x: 80, icon: '🦖', title: 'Welcome to Snack Meadow!', desktop: 'Use A / D or Arrow Keys to move · Space to jump!', touch: 'Use ← → to move · Tap [Jump] to hop!' },
+      { id: 'pizza', x: 260, icon: '🍕', title: 'Pizza Chomp!', desktop: 'Press [ X ] or [ E ] to chomp enemies!', touch: 'Tap pink [Chomp] to gobble enemies!' },
+      { id: 'shelves', x: 850, icon: '🪜', title: 'Candy Shelves', desktop: 'Hold [Down] + [Space] to drop through shelves!', touch: 'Hold [ ↓ ] + tap [Jump] to drop through!' },
+      { id: 'donut', x: 1400, icon: '🍩', title: 'Donut Phase!', desktop: 'Eat the donut to slip right through purple jelly walls!', touch: 'Eat the donut to slip right through purple jelly walls!' },
+      { id: 'stomp', x: 2150, icon: '🍔', title: 'Burger Stomp!', desktop: 'Press [Down] while in mid-air to ground-pound!', touch: 'Tap [ ↓ ] while in mid-air to ground-pound!' }
+    ];
+    this.triggeredTutorials = new Set();
+    this.activeTutorial = null;
+    this.tutorialTimer = 0;
   }
 
   _renderBackground(ctx) {

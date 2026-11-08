@@ -169,6 +169,7 @@ export class App {
     this.screen = screen; $('app').dataset.screen = screen;
     // Full screen is only for playing: finishing a level or opening a menu leaves it.
     if (screen !== 'game' && isFullscreen()) void exitFullscreen();
+    if (screen !== 'game' && $('gameTutorialBubble')) $('gameTutorialBubble').hidden = true;
     for (const [name, id] of Object.entries(PANELS)) $(id).hidden = name !== screen;
     $('worldLayout').hidden = screen === 'game';
     if (screen === 'game') this.scene.stop();
@@ -315,7 +316,9 @@ export class App {
       const hard = Boolean(this.settings.hardMode);
       const runId = await this.account.startRun(levelId, hard);
       if (this.user?.id !== userId) return;
-      $('pauseOverlay').hidden = true; this.show('game');
+      $('pauseOverlay').hidden = true;
+      if ($('gameTutorialBubble')) $('gameTutorialBubble').hidden = true;
+      this.show('game');
       const levelTitle = LEVELS.find(level => level.id === levelId)?.name || 'Snack Meadow';
       this.updateGameHUD({ health: hard ? 1 : 3, maxHealth: hard ? 1 : 3, time: 240, score: 0, levelId, levelTitle });
       this.game.start(runId, this.equipped(), levelId, { hard }); $('gameCanvas').focus();
@@ -351,6 +354,24 @@ export class App {
     } else {
       $('gamePower').textContent = 'Find a snack!';
       if (meter) meter.hidden = true;
+    }
+    const bubble = $('gameTutorialBubble');
+    if (bubble) {
+      if (value.tutorial && value.levelId === '1-1') {
+        const step = value.tutorial;
+        $('tutorialIcon').textContent = step.icon;
+        $('tutorialTitle').textContent = step.title;
+        $('tutorialDetail').textContent = isTouchDevice() ? step.touch : step.desktop;
+        bubble.classList.remove('dismissing');
+        bubble.hidden = false;
+      } else if (!bubble.hidden && !bubble.classList.contains('dismissing')) {
+        bubble.classList.add('dismissing');
+        clearTimeout(this._tutorialDismissTimer);
+        this._tutorialDismissTimer = setTimeout(() => {
+          bubble.hidden = true;
+          bubble.classList.remove('dismissing');
+        }, 320);
+      }
     }
   }
   async finish(result) {
