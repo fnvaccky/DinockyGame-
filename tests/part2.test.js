@@ -433,3 +433,14 @@ test('every level renders completely without throwing any runtime or reference e
   }
 });
 
+test('checkpoint activates whether player is on floor, on a platform above, or jumping in mid-air', async () => {
+  const { createLevel } = await import('../src/levels/LevelRegistry.js');
+  const level = createLevel('1-3');
+  assert.equal(level.checkpoint.active, false);
+  const midAirPlayer = new Player(level.checkpoint.x, 320);
+  midAirPlayer.isGrounded = false;
+  level.update(0.016, midAirPlayer);
+  assert.equal(level.checkpoint.active, true, 'checkpoint should activate when jumping in mid-air or standing on a platform above it');
+});
+
+

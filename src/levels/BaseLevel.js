@@ -252,11 +252,12 @@ export class BaseLevel extends TestArena {
       }
     }
 
-    // Checkpoint activation
-    if (!this.checkpoint.active && !this.checkpoint.disabled && player.x >= this.checkpoint.x && player.isGrounded && Math.abs(player.y - 480) < 5) {
+    // Checkpoint activation: triggers whether grounded on the floor, on a platform above, or jumping in mid-air
+    if (!this.checkpoint.active && !this.checkpoint.disabled &&
+        player.x >= this.checkpoint.x - 20 && player.y <= 495 && player.y >= 50) {
       this.checkpoint.active = true;
-      this.addPopup(this.checkpoint.x, 370, 'CHECKPOINT!', '#15803D');
-      this.addBurst(this.checkpoint.x + 20, 360, 15, ['#22C55E', '#86EFAC', '#FEF08A'], 'sparkle');
+      this.addPopup(this.checkpoint.x + 20, Math.min(player.y - 40, 370), 'CHECKPOINT! ★', '#15803D');
+      this.addBurst(this.checkpoint.x + 20, Math.min(player.y - 20, 360), 16, ['#22C55E', '#86EFAC', '#FEF08A', '#FFFFFF'], 'sparkle');
       events.emit('checkpoint', {});
     }
 
