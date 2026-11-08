@@ -576,6 +576,8 @@ export class BaseLevel extends TestArena {
         }
       } else if (obs.type === 'barrier') {
         // Solid Phase Barrier (pass through with Donut)
+        const time = Date.now() * 0.003;
+        const alpha = 0.65 + Math.sin(time) * 0.12;
         ctx.save();
         ctx.fillStyle = this.theme === 'grove' ? '#C026D3' : '#9333EA';
         ctx.fillRect(obs.x, obs.y, obs.w, obs.h);

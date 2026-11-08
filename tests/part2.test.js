@@ -413,3 +413,23 @@ test('Hog Hollow ledges are one real jump up and keep Dinocky above the charging
   for (let i = 0; i < 90 && boss.state === 'charge'; i++) { level.update(dt, rider); rider.y = ledges[0].y; }
   assert.equal(boss.state, 'dizzy'); assert.equal(level.health, 3);
 });
+
+test('every level renders completely without throwing any runtime or reference errors', async () => {
+  const { createLevel } = await import('../src/levels/LevelRegistry.js');
+  const noop = () => {};
+  const grad = { addColorStop: noop };
+  const mockCtx = new Proxy({}, {
+    get: (_, prop) => {
+      if (prop === 'createLinearGradient' || prop === 'createRadialGradient') return () => grad;
+      return noop;
+    },
+    set: () => true
+  });
+  for (const id of ['1-1', '1-2', '1-3', '1-4']) {
+    const level = createLevel(id);
+    assert.doesNotThrow(() => {
+      level.render(mockCtx);
+    }, `${id} render should not throw`);
+  }
+});
+
