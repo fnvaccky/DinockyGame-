@@ -416,24 +416,6 @@ export class BaseLevel extends TestArena {
       }
     }
 
-    // Render decorative wooden signposts in the background grass
-    for (const [x] of this.signs) {
-      ctx.save();
-      ctx.fillStyle = '#8B5A2B';
-      ctx.fillRect(x + 12, 442, 6, 38);
-      ctx.fillStyle = '#C19A6B';
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(x - 4, 422, 38, 22, 4) : ctx.rect(x - 4, 422, 38, 22);
-      ctx.fill();
-      ctx.strokeStyle = '#6E471E';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.fillStyle = '#6E471E';
-      ctx.fillRect(x + 4, 429, 20, 2);
-      ctx.fillRect(x + 4, 434, 14, 2);
-      ctx.restore();
-    }
-
     // Render Bounce Pads
     for (const pad of this.bouncePads) {
       pad.render(ctx);
