@@ -11,3 +11,5 @@ supabase/.temp/
 .env*
 !.env.example
 *.blend1
+*.backup*
+

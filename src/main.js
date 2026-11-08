@@ -462,3 +462,63 @@ export class App {
 }
 
 new App();
+
+// ─── iOS / Android / Desktop zoom & gesture prevention ────────────────────────
+// 1. Blocks pinch-zoom via Safari's proprietary gesture events.
+document.addEventListener('gesturestart',  e => e.preventDefault(), { passive: false });
+document.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
+document.addEventListener('gestureend',    e => e.preventDefault(), { passive: false });
+
+// 2. Blocks multi-touch pinch on touchstart for all touch devices.
+document.addEventListener('touchstart', e => {
+  if (e.touches && e.touches.length > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// 3. Blocks double-tap zoom: if two taps land within 350 ms, suppress zoom.
+let _lastTap = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if (now - _lastTap < 350) {
+    if (!e.target.closest('input, textarea')) {
+      e.preventDefault();
+    }
+  }
+  _lastTap = now;
+}, { passive: false });
+
+// 4. Blocks standard dblclick zoom everywhere except editable text inputs.
+document.addEventListener('dblclick', e => {
+  if (!e.target.closest('input, textarea')) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// 5. Blocks Ctrl + wheel zoom and trackpad pinch zoom on laptops/desktops.
+document.addEventListener('wheel', e => {
+  if (e.ctrlKey) e.preventDefault();
+}, { passive: false });
+
+// 6. Blocks Ctrl/Cmd keyboard zoom shortcuts (+, -, 0).
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '0'].includes(e.key)) {
+    e.preventDefault();
+  }
+});
+
+// 7. Prevent pull-to-refresh and rubber-banding during gameplay or 3D interaction.
+document.addEventListener('touchmove', e => {
+  if (e.target.closest('#gamePanel, #touchControls, #sceneHost')) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// 8. Prevent long-press context menu popup during touch gameplay.
+document.addEventListener('contextmenu', e => {
+  if (e.target.closest('#gamePanel, #sceneHost, #touchControls')) {
+    e.preventDefault();
+  }
+});
+
+
